@@ -265,7 +265,14 @@ function saveCustomers(customers) {
   localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(customers));
 }
 function loadWalkinBookings() {
-  try { return JSON.parse(localStorage.getItem(WALKIN_BOOKINGS_KEY)) || []; } catch { return []; }
+  let bookings;
+  try { bookings = JSON.parse(localStorage.getItem(WALKIN_BOOKINGS_KEY)) || []; } catch { bookings = []; }
+  let needsBackfill = false;
+  bookings.forEach((b, i) => {
+    if (!b.id) { b.id = `wb-${Date.now()}-${i}`; needsBackfill = true; }
+  });
+  if (needsBackfill) saveWalkinBookings(bookings);
+  return bookings;
 }
 function saveWalkinBookings(bookings) {
   localStorage.setItem(WALKIN_BOOKINGS_KEY, JSON.stringify(bookings));
@@ -450,6 +457,8 @@ function renderEmployeeView(role) {
                   <th class="whitespace-nowrap px-4 py-3">Service</th>
                   <th class="whitespace-nowrap px-4 py-3">Visit</th>
                   <th class="whitespace-nowrap px-4 py-3">Logged</th>
+                  <th class="whitespace-nowrap px-4 py-3">Status</th>
+                  <th class="whitespace-nowrap px-4 py-3">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -462,8 +471,16 @@ function renderEmployeeView(role) {
                     <td class="whitespace-nowrap px-4 py-3 text-muted">${v.service || "—"}</td>
                     <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
                     <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
+                    <td class="whitespace-nowrap px-4 py-3">
+                      <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-white/10 text-muted"}">${v.status || "Booked"}</span>
+                    </td>
+                    <td class="whitespace-nowrap px-4 py-3">
+                      ${v.status === "Completed"
+                        ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-brand-amber"><i data-lucide="check" class="h-3.5 w-3.5"></i> Done</span>`
+                        : `<button onclick="markWalkinDone('${v.id}')" class="rounded-lg border border-brand-amber/40 px-2 py-1 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark as done</button>`}
+                    </td>
                   </tr>`).join("") : `
-                  <tr><td colspan="7" class="px-4 py-6 text-center text-muted">No walk-in vehicle records yet.</td></tr>`}
+                  <tr><td colspan="9" class="px-4 py-6 text-center text-muted">No walk-in vehicle records yet.</td></tr>`}
               </tbody>
             </table>
           </div>
@@ -471,6 +488,16 @@ function renderEmployeeView(role) {
       </main>
     </div>`;
   renderUserBadge(role, "employee-user-badge");
+  lucide.createIcons();
+}
+
+function markWalkinDone(id) {
+  const bookings = loadWalkinBookings();
+  const booking = bookings.find((b) => b.id === id);
+  if (!booking) return;
+  booking.status = "Completed";
+  saveWalkinBookings(bookings);
+  renderEmployeeView(loadSession().role);
 }
 
 function bootstrap() {
@@ -801,6 +828,7 @@ function submitBooking(event) {
   const visitLabel = visitNumber === 1 ? "1st visit" : `Visit #${visitNumber}`;
   const bookings = loadWalkinBookings();
   bookings.unshift({
+    id: `wb-${Date.now()}`,
     title: `Walk-in — ${service}`,
     sub: `${vehicle}${plate ? " · Plate " + plate : ""} · Owner: ${ownerName} · ${visitLabel}${notes ? " · " + notes : ""}`,
     status: "Booked",
