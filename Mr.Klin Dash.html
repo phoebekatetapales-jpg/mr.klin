@@ -38,25 +38,32 @@
 </head>
 <body class="min-h-screen bg-base font-sans text-ink antialiased pb-16">
 
-  <header class="border-b border-white/10 bg-panel">
-    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-      <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
-      <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
-      <p class="mt-1 max-w-2xl text-sm text-muted">
-        A single view of every way customers reach you — from the front counter to fleet contracts —
-        with the metrics that matter for each.
-      </p>
-    </div>
-  </header>
+  <div id="login-root"></div>
 
-  <main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-    <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
-    <div id="filter-bar"></div>
-    <div id="channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>
-  </main>
+  <div id="app-root" class="hidden">
+    <header class="border-b border-white/10 bg-panel">
+      <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
+          <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
+          <p class="mt-1 max-w-2xl text-sm text-muted">
+            A single view of every way customers reach you — from the front counter to fleet contracts —
+            with the metrics that matter for each.
+          </p>
+        </div>
+        <div id="user-badge" class="flex shrink-0 items-center gap-2 self-start rounded-lg border border-white/10 bg-white/5 px-3 py-2"></div>
+      </div>
+    </header>
 
-  <div id="modal-root"></div>
-  <div id="booking-modal-root"></div>
+    <main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+      <div id="filter-bar"></div>
+      <div id="channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>
+    </main>
+
+    <div id="modal-root"></div>
+    <div id="booking-modal-root"></div>
+  </div>
 
 <script>
 // ---------------------------------------------------------------------------
@@ -270,6 +277,126 @@ function getCustomerKey(name, phone) {
 function getDisplayRecentItems(channel) {
   if (channel.id !== "walkin") return channel.recentItems;
   return [...loadWalkinBookings(), ...channel.recentItems];
+}
+
+// ---------------------------------------------------------------------------
+// Login gate
+//
+// NOTE: this is a front-end-only soft gate, not real security. This is a
+// static page with no server, so these credentials live in the page's
+// source and anyone who views it can read them or skip the check entirely.
+// It keeps casual visitors out of day-to-day use; it does not protect
+// sensitive data. Change the passwords below to your own.
+// ---------------------------------------------------------------------------
+
+const ACCOUNTS = {
+  admin: { label: "Admin", password: "admin123" },
+  owner: { label: "Owner", password: "owner123" },
+};
+const SESSION_KEY = "mrklin_session_v1";
+let loginRole = "admin";
+
+function loadSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
+}
+function saveSession(role) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ role }));
+}
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function setLoginRole(role) {
+  loginRole = role;
+  updateLoginRoleButtons();
+}
+function updateLoginRoleButtons() {
+  const adminBtn = document.getElementById("role-btn-admin");
+  const ownerBtn = document.getElementById("role-btn-owner");
+  if (!adminBtn || !ownerBtn) return;
+  adminBtn.className = `flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+    loginRole === "admin" ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
+  }`;
+  ownerBtn.className = `flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+    loginRole === "owner" ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
+  }`;
+}
+
+function renderLogin() {
+  document.getElementById("app-root").classList.add("hidden");
+  const root = document.getElementById("login-root");
+  root.innerHTML = `
+    <div class="fixed inset-0 z-[100] flex items-center justify-center bg-base p-4">
+      <div class="w-full max-w-sm rounded-2xl border border-white/10 bg-panel p-6 shadow-2xl shadow-black/50">
+        <div class="mb-6 text-center">
+          <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
+          <h1 class="mt-1 font-heading text-xl font-bold text-ink">Sign in</h1>
+        </div>
+        <form onsubmit="attemptLogin(event)" class="space-y-4">
+          <div>
+            <label class="mb-1 block text-xs font-medium text-muted">Role</label>
+            <div class="flex rounded-lg bg-white/5 p-1">
+              <button type="button" id="role-btn-admin" onclick="setLoginRole('admin')" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors">Admin</button>
+              <button type="button" id="role-btn-owner" onclick="setLoginRole('owner')" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors">Owner</button>
+            </div>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-muted">Password</label>
+            <input required id="login-password" type="password" autofocus
+              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              placeholder="Enter password" />
+          </div>
+          <p id="login-error" class="hidden text-xs text-brand-red"></p>
+          <button type="submit" class="w-full rounded-lg bg-brand-red px-4 py-2 text-sm font-medium text-ink hover:bg-brand-amber hover:text-base transition-colors">Sign in</button>
+        </form>
+      </div>
+    </div>`;
+  updateLoginRoleButtons();
+}
+
+function attemptLogin(event) {
+  event.preventDefault();
+  const password = document.getElementById("login-password").value;
+  const account = ACCOUNTS[loginRole];
+  const errorEl = document.getElementById("login-error");
+  if (account && password === account.password) {
+    saveSession(loginRole);
+    startApp(loginRole);
+  } else {
+    errorEl.textContent = "Incorrect password. Please try again.";
+    errorEl.classList.remove("hidden");
+  }
+}
+
+function logout() {
+  clearSession();
+  loginRole = "admin";
+  renderLogin();
+}
+
+function renderUserBadge(role) {
+  const el = document.getElementById("user-badge");
+  const account = ACCOUNTS[role];
+  el.innerHTML = `
+    <span class="text-xs text-muted">Signed in as</span>
+    <span class="text-sm font-semibold text-ink">${account ? account.label : role}</span>
+    <button onclick="logout()" class="ml-2 rounded-lg border border-white/10 px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Log out</button>`;
+}
+
+function startApp(role) {
+  document.getElementById("login-root").innerHTML = "";
+  document.getElementById("app-root").classList.remove("hidden");
+  renderUserBadge(role);
+  renderAll();
+}
+
+function bootstrap() {
+  const session = loadSession();
+  if (session && ACCOUNTS[session.role]) {
+    startApp(session.role);
+  } else {
+    renderLogin();
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -610,7 +737,7 @@ function renderAll() {
   lucide.createIcons();
 }
 
-renderAll();
+bootstrap();
 </script>
 </body>
 </html>
