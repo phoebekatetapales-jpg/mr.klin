@@ -56,6 +56,7 @@
   </main>
 
   <div id="modal-root"></div>
+  <div id="booking-modal-root"></div>
 
 <script>
 // ---------------------------------------------------------------------------
@@ -243,6 +244,34 @@ function fmt(n) {
   return typeof n === "number" ? n.toLocaleString("en-US") : n;
 }
 
+// Walk-in bookings and customer visit counts live in localStorage since this
+// dashboard has no backend — they persist on this browser/device only.
+const CUSTOMERS_KEY = "mrklin_customers_v1";
+const WALKIN_BOOKINGS_KEY = "mrklin_walkin_bookings_v1";
+
+function loadCustomers() {
+  try { return JSON.parse(localStorage.getItem(CUSTOMERS_KEY)) || {}; } catch { return {}; }
+}
+function saveCustomers(customers) {
+  localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(customers));
+}
+function loadWalkinBookings() {
+  try { return JSON.parse(localStorage.getItem(WALKIN_BOOKINGS_KEY)) || []; } catch { return []; }
+}
+function saveWalkinBookings(bookings) {
+  localStorage.setItem(WALKIN_BOOKINGS_KEY, JSON.stringify(bookings));
+}
+function normalizePhone(phone) {
+  return (phone || "").replace(/\D/g, "");
+}
+function getCustomerKey(name, phone) {
+  return normalizePhone(phone) || (name || "").trim().toLowerCase();
+}
+function getDisplayRecentItems(channel) {
+  if (channel.id !== "walkin") return channel.recentItems;
+  return [...loadWalkinBookings(), ...channel.recentItems];
+}
+
 // ---------------------------------------------------------------------------
 // Renderers
 // ---------------------------------------------------------------------------
@@ -345,6 +374,12 @@ function renderChannels() {
                 </div>`).join("")}
             </div>
           </div>
+          ${ch.id === "walkin" ? `
+          <button onclick="openBookingForm()"
+            class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-brand-amber/40 px-3 py-2 text-sm font-medium text-brand-amber hover:bg-brand-amber/10 transition-colors">
+            <i data-lucide="user-plus" class="h-3.5 w-3.5"></i>
+            New walk-in booking
+          </button>` : ""}
           <button onclick="openModal('${ch.id}')"
             class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-red px-3 py-2 text-sm font-medium text-ink hover:bg-brand-amber hover:text-base transition-colors">
             View recent activity
@@ -385,7 +420,7 @@ function renderModal(channelId, feature) {
           </div>
           <p class="mb-2 text-xs font-medium text-muted">${ch.recentLabel}</p>
           <ul class="space-y-2">
-            ${ch.recentItems.map((item) => `
+            ${getDisplayRecentItems(ch).map((item) => `
               <li class="flex items-start gap-3 rounded-lg border border-white/10 p-3 hover:border-white/20">
                 <i data-lucide="file-text" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
                 <div class="min-w-0 flex-1">
@@ -424,6 +459,121 @@ function openModal(channelId, feature) {
 }
 function closeModal() {
   renderModal(null);
+}
+
+function openBookingForm() {
+  const channel = CHANNELS.find((c) => c.id === "walkin");
+  const root = document.getElementById("booking-modal-root");
+  root.innerHTML = `
+    <div class="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onclick="closeBookingForm()">
+      <div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-panel shadow-2xl shadow-black/50 sm:max-w-lg sm:rounded-2xl" onclick="event.stopPropagation()">
+        <div class="flex items-center gap-3 px-5 py-4 bg-brand-red">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
+            <i data-lucide="clipboard-list" class="h-5 w-5 text-ink"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-heading text-base font-bold text-ink">New Walk-In Booking</p>
+            <p class="truncate text-xs text-ink/80">Owner, vehicle & visit details</p>
+          </div>
+          <button onclick="closeBookingForm()" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-ink hover:bg-white/25" aria-label="Close">
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        </div>
+        <form id="booking-form" class="flex-1 space-y-4 overflow-y-auto p-5" onsubmit="submitBooking(event)">
+          <div>
+            <label class="mb-1 block text-xs font-medium text-muted">Owner name *</label>
+            <input required id="bf-owner" type="text" oninput="previewVisit()"
+              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              placeholder="e.g. Maria Santos" />
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-muted">Phone number *</label>
+            <input required id="bf-phone" type="tel" oninput="previewVisit()"
+              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              placeholder="09xx xxx xxxx" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted">Vehicle make/model *</label>
+              <input required id="bf-vehicle" type="text"
+                class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+                placeholder="e.g. Toyota Vios" />
+            </div>
+            <div>
+              <label class="mb-1 block text-xs font-medium text-muted">Plate number</label>
+              <input id="bf-plate" type="text"
+                class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+                placeholder="ABC 1234" />
+            </div>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-muted">Service</label>
+            <select id="bf-service"
+              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink focus:border-brand-amber focus:outline-none">
+              ${channel.features.map((f) => `<option value="${f}">${f}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="mb-1 block text-xs font-medium text-muted">Notes</label>
+            <textarea id="bf-notes" rows="2"
+              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              placeholder="Optional notes"></textarea>
+          </div>
+          <div id="bf-visit-preview" class="rounded-lg bg-white/5 p-3 text-xs text-muted"></div>
+          <div class="flex justify-end gap-2 pt-2">
+            <button type="button" onclick="closeBookingForm()" class="rounded-lg px-3 py-2 text-sm font-medium text-muted hover:text-ink">Cancel</button>
+            <button type="submit" class="rounded-lg bg-brand-red px-4 py-2 text-sm font-medium text-ink hover:bg-brand-amber hover:text-base transition-colors">Save booking</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  lucide.createIcons();
+}
+
+function closeBookingForm() {
+  document.getElementById("booking-modal-root").innerHTML = "";
+}
+
+function previewVisit() {
+  const preview = document.getElementById("bf-visit-preview");
+  const name = document.getElementById("bf-owner").value;
+  const phone = document.getElementById("bf-phone").value;
+  const key = getCustomerKey(name, phone);
+  if (!key) { preview.textContent = ""; return; }
+  const existing = loadCustomers()[key];
+  preview.textContent = existing
+    ? `Returning customer — this will be visit #${existing.visits + 1}. Last visit: ${existing.lastVisit}.`
+    : "New customer — this will be their first visit.";
+}
+
+function submitBooking(event) {
+  event.preventDefault();
+  const ownerName = document.getElementById("bf-owner").value.trim();
+  const phone = document.getElementById("bf-phone").value.trim();
+  const vehicle = document.getElementById("bf-vehicle").value.trim();
+  const plate = document.getElementById("bf-plate").value.trim();
+  const service = document.getElementById("bf-service").value;
+  const notes = document.getElementById("bf-notes").value.trim();
+
+  const key = getCustomerKey(ownerName, phone);
+  const customers = loadCustomers();
+  const visitNumber = customers[key] ? customers[key].visits + 1 : 1;
+  customers[key] = { name: ownerName, phone, visits: visitNumber, lastVisit: "Today" };
+  saveCustomers(customers);
+
+  const visitLabel = visitNumber === 1 ? "1st visit" : `Visit #${visitNumber}`;
+  const bookings = loadWalkinBookings();
+  bookings.unshift({
+    title: `Walk-in — ${service}`,
+    sub: `${vehicle}${plate ? " · Plate " + plate : ""} · Owner: ${ownerName} · ${visitLabel}${notes ? " · " + notes : ""}`,
+    status: "Booked",
+    time: "Just now",
+  });
+  saveWalkinBookings(bookings);
+
+  closeBookingForm();
+  renderAll();
+  openModal("walkin");
 }
 
 function renderAll() {
