@@ -65,6 +65,8 @@
     <div id="booking-modal-root"></div>
   </div>
 
+  <div id="employee-root" class="hidden"></div>
+
 <script>
 // ---------------------------------------------------------------------------
 // Data
@@ -292,6 +294,7 @@ function getDisplayRecentItems(channel) {
 const ACCOUNTS = {
   admin: { label: "Admin", password: "admin123" },
   owner: { label: "Owner", password: "owner123" },
+  employee: { label: "Employee", password: "employee123" },
 };
 const SESSION_KEY = "mrklin_session_v1";
 let loginRole = "admin";
@@ -311,19 +314,18 @@ function setLoginRole(role) {
   updateLoginRoleButtons();
 }
 function updateLoginRoleButtons() {
-  const adminBtn = document.getElementById("role-btn-admin");
-  const ownerBtn = document.getElementById("role-btn-owner");
-  if (!adminBtn || !ownerBtn) return;
-  adminBtn.className = `flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-    loginRole === "admin" ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
-  }`;
-  ownerBtn.className = `flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-    loginRole === "owner" ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
-  }`;
+  Object.keys(ACCOUNTS).forEach((role) => {
+    const btn = document.getElementById(`role-btn-${role}`);
+    if (!btn) return;
+    btn.className = `flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm ${
+      loginRole === role ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
+    }`;
+  });
 }
 
 function renderLogin() {
   document.getElementById("app-root").classList.add("hidden");
+  document.getElementById("employee-root").classList.add("hidden");
   const root = document.getElementById("login-root");
   root.innerHTML = `
     <div class="fixed inset-0 z-[100] flex items-center justify-center bg-base p-4">
@@ -336,8 +338,9 @@ function renderLogin() {
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Role</label>
             <div class="flex rounded-lg bg-white/5 p-1">
-              <button type="button" id="role-btn-admin" onclick="setLoginRole('admin')" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors">Admin</button>
-              <button type="button" id="role-btn-owner" onclick="setLoginRole('owner')" class="flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors">Owner</button>
+              <button type="button" id="role-btn-admin" onclick="setLoginRole('admin')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Admin</button>
+              <button type="button" id="role-btn-owner" onclick="setLoginRole('owner')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Owner</button>
+              <button type="button" id="role-btn-employee" onclick="setLoginRole('employee')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Employee</button>
             </div>
           </div>
           <div>
@@ -374,8 +377,9 @@ function logout() {
   renderLogin();
 }
 
-function renderUserBadge(role) {
-  const el = document.getElementById("user-badge");
+function renderUserBadge(role, elementId) {
+  const el = document.getElementById(elementId || "user-badge");
+  if (!el) return;
   const account = ACCOUNTS[role];
   el.innerHTML = `
     <span class="text-xs text-muted">Signed in as</span>
@@ -385,9 +389,88 @@ function renderUserBadge(role) {
 
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
-  document.getElementById("app-root").classList.remove("hidden");
-  renderUserBadge(role);
-  renderAll();
+  if (role === "employee") {
+    document.getElementById("app-root").classList.add("hidden");
+    document.getElementById("employee-root").classList.remove("hidden");
+    renderEmployeeView(role);
+  } else {
+    document.getElementById("employee-root").classList.add("hidden");
+    document.getElementById("app-root").classList.remove("hidden");
+    renderUserBadge(role, "user-badge");
+    renderAll();
+  }
+}
+
+function renderEmployeeView(role) {
+  const root = document.getElementById("employee-root");
+  const bookingCounts = CHANNELS.map((ch) => ({
+    name: ch.name,
+    count: getDisplayRecentItems(ch).length,
+  }));
+  const totalBookings = bookingCounts.reduce((sum, c) => sum + c.count, 0);
+  const vehicles = loadWalkinBookings();
+
+  root.innerHTML = `
+    <div class="min-h-screen bg-base">
+      <header class="border-b border-white/10 bg-panel">
+        <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
+            <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Employee View</h1>
+            <p class="mt-1 max-w-2xl text-sm text-muted">Booking counts and vehicle details for walk-in customers.</p>
+          </div>
+          <div id="employee-user-badge" class="flex shrink-0 items-center gap-2 self-start rounded-lg border border-white/10 bg-white/5 px-3 py-2"></div>
+        </div>
+      </header>
+      <main class="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+        <div>
+          <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Number of bookings by channel</p>
+          <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            ${bookingCounts.map((c) => `
+              <div class="rounded-xl border border-white/10 bg-panel p-4">
+                <p class="truncate text-sm text-muted">${c.name}</p>
+                <p class="font-heading text-2xl font-bold text-ink tabular-nums">${c.count}</p>
+              </div>`).join("")}
+            <div class="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4">
+              <p class="text-sm text-brand-red">Total bookings</p>
+              <p class="font-heading text-2xl font-bold text-ink tabular-nums">${totalBookings}</p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Unit (vehicle) information — walk-in bookings</p>
+          <div class="overflow-x-auto rounded-xl border border-white/10 bg-panel">
+            <table class="w-full text-left text-sm">
+              <thead>
+                <tr class="border-b border-white/10 text-xs uppercase tracking-wide text-muted">
+                  <th class="whitespace-nowrap px-4 py-3">Owner</th>
+                  <th class="whitespace-nowrap px-4 py-3">Phone</th>
+                  <th class="whitespace-nowrap px-4 py-3">Vehicle</th>
+                  <th class="whitespace-nowrap px-4 py-3">Plate</th>
+                  <th class="whitespace-nowrap px-4 py-3">Service</th>
+                  <th class="whitespace-nowrap px-4 py-3">Visit</th>
+                  <th class="whitespace-nowrap px-4 py-3">Logged</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${vehicles.length ? vehicles.map((v) => `
+                  <tr class="border-b border-white/5 last:border-0">
+                    <td class="whitespace-nowrap px-4 py-3 text-ink">${v.ownerName || "—"}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.phone || "—"}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-ink">${v.vehicle || "—"}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.plate || "—"}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.service || "—"}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
+                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
+                  </tr>`).join("") : `
+                  <tr><td colspan="7" class="px-4 py-6 text-center text-muted">No walk-in vehicle records yet.</td></tr>`}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>`;
+  renderUserBadge(role, "employee-user-badge");
 }
 
 function bootstrap() {
@@ -722,6 +805,12 @@ function submitBooking(event) {
     sub: `${vehicle}${plate ? " · Plate " + plate : ""} · Owner: ${ownerName} · ${visitLabel}${notes ? " · " + notes : ""}`,
     status: "Booked",
     time: "Just now",
+    ownerName,
+    phone,
+    vehicle,
+    plate,
+    service,
+    visitNumber,
   });
   saveWalkinBookings(bookings);
 
