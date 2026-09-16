@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Customer & Service Channels — Shine Fleet Auto Detailing</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          base: "#121212",
+          panel: "#1A1B1E",
+          ink: "#F5F5F3",
+          muted: "#8A8D91",
+          brand: {
+            red: "#E63946",
+            amber: "#F2A93B",
+          },
+        },
+        fontFamily: {
+          heading: ["Syne", "sans-serif"],
+          sans: ["Inter", "sans-serif"],
+        },
+      },
+    },
+  };
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<style>
+  .tabular-nums { font-variant-numeric: tabular-nums; }
+  ::selection { background: #E63946; color: #F5F5F3; }
+</style>
+</head>
+<body class="min-h-screen bg-base font-sans text-ink antialiased pb-16">
+
+  <header class="border-b border-white/10 bg-panel">
+    <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <p class="text-xs font-medium uppercase tracking-wide text-muted">Shine Fleet Auto Detailing</p>
+      <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
+      <p class="mt-1 max-w-2xl text-sm text-muted">
+        A single view of every way customers reach you — from the front counter to fleet contracts —
+        with the metrics that matter for each.
+      </p>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+    <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+    <div id="filter-bar"></div>
+    <div id="channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>
+  </main>
+
+  <div id="modal-root"></div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Data
+// ---------------------------------------------------------------------------
+
+const TIMEFRAMES = [
+  { id: "today", label: "Today", factor: 1 },
+  { id: "week", label: "This Week", factor: 6.5 },
+  { id: "month", label: "This Month", factor: 27 },
+];
+
+const SERVICE_TYPES = [
+  { id: "all", label: "All Services" },
+  { id: "mobile", label: "Mobile" },
+  { id: "inshop", label: "In-Shop" },
+];
+
+const CHANNELS = [
+  {
+    id: "walkin",
+    name: "Walk-In / Phone Inquiries",
+    tag: "Front counter &amp; phone line",
+    icon: "phone",
+    serviceGroup: "inshop",
+    features: ["Service inquiries", "Quote requests", "Appointment booking", "General questions"],
+    metrics: [
+      { label: "Daily walk-in volume", value: 18, unit: " visits", scalable: true },
+      { label: "Call conversion rate", value: 62, unit: "%", scalable: false },
+      { label: "Avg. call duration", value: "4m 10s", unit: "", scalable: false },
+    ],
+    recentLabel: "Recent inquiries",
+    recentItems: [
+      { title: "Walk-in — full interior detail", sub: "Toyota Camry · asked about ceramic add-on", status: "Quoted", time: "12 min ago" },
+      { title: "Phone — paint correction question", sub: "Returning question from last week's quote", status: "Follow-up", time: "45 min ago" },
+      { title: "Walk-in — booked Saturday slot", sub: "Standard wash & wax, 2010 F-150", status: "Booked", time: "1 hr ago" },
+      { title: "Phone — pricing for leather seats", sub: "3-row SUV, kids + pet hair", status: "Quoted", time: "2 hr ago" },
+      { title: "Walk-in — general hours question", sub: "No service requested yet", status: "Closed", time: "3 hr ago" },
+    ],
+  },
+  {
+    id: "social",
+    name: "Facebook / Instagram / Messenger",
+    tag: "Social inbox &amp; campaigns",
+    icon: "message-circle",
+    serviceGroup: "inshop",
+    features: ["Inquiries & DMs", "Quote requests", "Promotions & campaigns", "Appointment booking"],
+    metrics: [
+      { label: "Response time", value: "9m", unit: " avg", scalable: false },
+      { label: "Campaign CTR", value: 3.4, unit: "%", scalable: false },
+      { label: "Social leads converted", value: 11, unit: " leads", scalable: true },
+    ],
+    recentLabel: "Recent DMs & leads",
+    recentItems: [
+      { title: "IG DM — before/after post inquiry", sub: "Asked about mobile availability in Meadowbrook", status: "New", time: "6 min ago" },
+      { title: "Messenger — Fall Detail Special", sub: "Clicked promo, asking for weekend slot", status: "Quoted", time: "30 min ago" },
+      { title: "FB comment → DM — engine bay cleaning", sub: "Moved to private thread for pricing", status: "Follow-up", time: "1 hr ago" },
+      { title: "IG DM — gift card question", sub: "Wants to send detail as a gift", status: "Closed", time: "2 hr ago" },
+      { title: "Messenger — booked ceramic coating consult", sub: "Referred by a tagged friend", status: "Booked", time: "4 hr ago" },
+    ],
+  },
+  {
+    id: "web",
+    name: "Website / Quote / Booking",
+    tag: "Self-service web funnel",
+    icon: "globe",
+    serviceGroup: "inshop",
+    features: ["Service information", "Online quote requests", "Appointment booking", "Track order status"],
+    metrics: [
+      { label: "Web traffic", value: 412, unit: " visits", scalable: true },
+      { label: "Self-service booking rate", value: 48, unit: "%", scalable: false },
+      { label: "Quote completion rate", value: 71, unit: "%", scalable: false },
+    ],
+    recentLabel: "Recent web activity",
+    recentItems: [
+      { title: "Online quote — SUV full detail", sub: "Submitted photos, awaiting reply", status: "New", time: "3 min ago" },
+      { title: "Booking — Tue 9:00 AM slot held", sub: "Interior shampoo + odor treatment", status: "Booked", time: "22 min ago" },
+      { title: "Status check — order #A1183", sub: "Customer viewed tracking page twice", status: "In progress", time: "50 min ago" },
+      { title: "Quote abandoned — step 3 of 4", sub: "Left at vehicle-size selection", status: "Abandoned", time: "1 hr ago" },
+      { title: "Booking — fleet trial request", sub: "Small landscaping company, 4 trucks", status: "Follow-up", time: "2 hr ago" },
+    ],
+  },
+  {
+    id: "mobile",
+    name: "Mobile Detailing / On-Site Service",
+    tag: "Vans, routes &amp; live jobs",
+    icon: "car",
+    serviceGroup: "mobile",
+    features: ["On-site appointments", "Fleet and home service", "Location scheduling", "Real-time updates"],
+    metrics: [
+      { label: "Active mobile units", value: 5, unit: " vans", scalable: false },
+      { label: "On-time arrival rate", value: 94, unit: "%", scalable: false },
+      { label: "Job completion time", value: "1h 45m", unit: " avg", scalable: false },
+    ],
+    recentLabel: "Live & recent jobs",
+    recentItems: [
+      { title: "Van 3 — on-site at Maple Ridge HOA", sub: "3-vehicle package, ETA on schedule", status: "In progress", time: "Live now" },
+      { title: "Van 1 — home service, Elm Street", sub: "Full detail, sedan, driveway access", status: "En route", time: "8 min ago" },
+      { title: "Van 4 — completed, downtown office lot", sub: "6 fleet sedans washed & vacuumed", status: "Completed", time: "1 hr ago" },
+      { title: "Van 2 — delayed 15 min, traffic", sub: "Customer notified via SMS", status: "Delayed", time: "1.5 hr ago" },
+      { title: "Van 5 — home service, Birchwood Ct.", sub: "Ceramic spray coat, driveway job", status: "Completed", time: "3 hr ago" },
+    ],
+  },
+  {
+    id: "loyalty",
+    name: "Repeat / Loyalty Customers",
+    tag: "Retention &amp; rewards",
+    icon: "star",
+    serviceGroup: "inshop",
+    features: ["Faster booking", "Loyalty rewards", "Special promotions", "Service history access"],
+    metrics: [
+      { label: "Repeat rate", value: 57, unit: "%", scalable: false },
+      { label: "Loyalty points redeemed", value: 1240, unit: " pts", scalable: true },
+      { label: "Customer lifetime value", value: "$1,860", unit: " avg CLV", scalable: false },
+    ],
+    recentLabel: "Recent loyalty activity",
+    recentItems: [
+      { title: "Priority rebooking — 6-month member", sub: "Rebooked same-day via saved profile", status: "Booked", time: "17 min ago" },
+      { title: "Reward redeemed — free tire shine", sub: "Applied to today's appointment", status: "Redeemed", time: "40 min ago" },
+      { title: "Tier upgrade — Gold reached", sub: "10th visit this year, auto-notified", status: "Upgraded", time: "2 hr ago" },
+      { title: "History lookup — last ceramic date", sub: "Checking reapplication window", status: "Viewed", time: "3 hr ago" },
+      { title: "Referral bonus issued", sub: "Referred a new B2B lead", status: "Credited", time: "5 hr ago" },
+    ],
+  },
+  {
+    id: "b2b",
+    name: "B2B / Fleet Accounts",
+    tag: "Commercial accounts",
+    icon: "building-2",
+    serviceGroup: "inshop",
+    features: ["Bulk bookings", "Fleet maintenance", "Account management", "Reporting & invoicing"],
+    metrics: [
+      { label: "Active accounts", value: 14, unit: " accounts", scalable: false },
+      { label: "Outstanding invoices", value: 6, unit: " invoices", scalable: false },
+      { label: "Fleet units serviced", value: 38, unit: " units", scalable: true },
+    ],
+    recentLabel: "Recent account activity",
+    recentItems: [
+      { title: "Riverside Logistics — monthly wash cycle", sub: "12 vans scheduled next Monday", status: "Scheduled", time: "25 min ago" },
+      { title: "Invoice #F-2291 sent", sub: "Net 30, delivery fleet contract", status: "Sent", time: "1 hr ago" },
+      { title: "Greenway Landscaping — trial follow-up", sub: "Requested a 4-truck quarterly quote", status: "Follow-up", time: "2 hr ago" },
+      { title: "Metro Realty — invoice overdue 5 days", sub: "Reminder sent to billing contact", status: "Overdue", time: "4 hr ago" },
+      { title: "New account onboarded — Coastal Rentals", sub: "9-unit car rental detail contract", status: "Onboarded", time: "Yesterday" },
+    ],
+  },
+];
+
+// Status chips are grouped into three brand-safe tiers rather than
+// per-status rainbow colors: red = needs attention, amber = positive/done,
+// neutral = informational.
+const STATUS_STYLES = {
+  New: "bg-white/10 text-muted", Booked: "bg-brand-amber/15 text-brand-amber",
+  Quoted: "bg-white/10 text-muted", "Follow-up": "bg-white/10 text-muted",
+  Closed: "bg-white/10 text-muted", "In progress": "bg-white/10 text-muted",
+  "En route": "bg-white/10 text-muted", Completed: "bg-brand-amber/15 text-brand-amber",
+  Delayed: "bg-brand-red/15 text-brand-red", Abandoned: "bg-brand-red/15 text-brand-red",
+  Redeemed: "bg-brand-amber/15 text-brand-amber", Upgraded: "bg-brand-amber/15 text-brand-amber",
+  Viewed: "bg-white/10 text-muted", Credited: "bg-brand-amber/15 text-brand-amber",
+  Scheduled: "bg-white/10 text-muted", Sent: "bg-white/10 text-muted",
+  Overdue: "bg-brand-red/15 text-brand-red", Onboarded: "bg-brand-amber/15 text-brand-amber",
+};
+
+const KPIS = [
+  { id: "inquiries", label: "Total Inquiries", icon: "inbox", base: 96, unit: "", accent: "text-brand-red", ring: "bg-brand-red/15" },
+  { id: "bookings", label: "Active Bookings", icon: "calendar-check", base: 34, unit: "", accent: "text-brand-amber", ring: "bg-brand-amber/15" },
+  { id: "retention", label: "Retention Rate", icon: "repeat", base: 57, unit: "%", accent: "text-brand-red", ring: "bg-brand-red/15", flat: true },
+  { id: "b2bAccounts", label: "B2B Accounts", icon: "building-2", base: 14, unit: "", accent: "text-brand-amber", ring: "bg-brand-amber/15", flat: true },
+];
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+
+const state = { timeframe: "today", serviceType: "all" };
+
+function getFactor() {
+  return TIMEFRAMES.find((t) => t.id === state.timeframe).factor;
+}
+function scaleValue(value, flat) {
+  const factor = getFactor();
+  if (flat || typeof value !== "number") return value;
+  return Math.round(value * factor);
+}
+function fmt(n) {
+  return typeof n === "number" ? n.toLocaleString("en-US") : n;
+}
+
+// ---------------------------------------------------------------------------
+// Renderers
+// ---------------------------------------------------------------------------
+
+function renderKPIs() {
+  const el = document.getElementById("kpi-header");
+  el.innerHTML = KPIS.map((kpi) => {
+    const value = scaleValue(kpi.base, kpi.flat);
+    return `
+      <div class="flex items-center gap-4 rounded-xl border border-white/10 bg-panel p-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${kpi.ring}">
+          <i data-lucide="${kpi.icon}" class="h-5 w-5 ${kpi.accent}"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="truncate text-sm text-muted">${kpi.label}</p>
+          <p class="font-heading text-2xl font-bold text-ink tabular-nums">${fmt(value)}${kpi.unit}</p>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderFilterBar() {
+  const el = document.getElementById("filter-bar");
+  el.innerHTML = `
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/10 bg-panel px-4 py-3">
+      <div class="flex items-center gap-2 text-muted">
+        <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
+        <span class="text-sm font-medium">Filters</span>
+      </div>
+      <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <div class="flex items-center gap-2">
+          <i data-lucide="calendar-days" class="h-4 w-4 text-muted shrink-0"></i>
+          <div class="flex rounded-lg bg-white/5 p-1">
+            ${TIMEFRAMES.map((tf) => `
+              <button onclick="setTimeframe('${tf.id}')"
+                class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  state.timeframe === tf.id ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
+                }">${tf.label}</button>`).join("")}
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <i data-lucide="car" class="h-4 w-4 text-muted shrink-0"></i>
+          <div class="flex rounded-lg bg-white/5 p-1">
+            ${SERVICE_TYPES.map((st) => `
+              <button onclick="setServiceType('${st.id}')"
+                class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  state.serviceType === st.id ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
+                }">${st.label}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderChannelMetric(metric) {
+  const scaled = scaleValue(metric.value, !metric.scalable);
+  return `${fmt(scaled)}${metric.unit}`;
+}
+
+function renderChannels() {
+  const el = document.getElementById("channels-grid");
+  el.innerHTML = CHANNELS.map((ch) => {
+    const dimmed = state.serviceType !== "all" && ch.serviceGroup !== state.serviceType;
+    const highlighted = state.serviceType !== "all" && ch.serviceGroup === state.serviceType;
+    return `
+      <div class="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-panel transition-all ${
+        dimmed ? "opacity-40 grayscale" : "opacity-100"
+      } ${highlighted ? "ring-2 ring-brand-amber/60" : ""}">
+        <button onclick="openModal('${ch.id}')" class="flex items-center gap-3 px-5 py-4 text-left bg-brand-red">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
+            <i data-lucide="${ch.icon}" class="h-5 w-5 text-ink"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-heading text-base font-bold text-ink">${ch.name}</p>
+            <p class="truncate text-xs text-ink/80">${ch.tag}</p>
+          </div>
+          <i data-lucide="chevron-right" class="h-4 w-4 shrink-0 text-ink"></i>
+        </button>
+        <div class="flex flex-1 flex-col gap-4 p-5">
+          <div>
+            <p class="mb-2 text-xs font-medium text-muted">Features</p>
+            <ul class="space-y-1.5">
+              ${ch.features.map((f) => `
+                <li>
+                  <button onclick="openModal('${ch.id}', '${f.replace(/'/g, "\\'")}')"
+                    class="group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm text-muted hover:bg-white/5">
+                    <i data-lucide="circle-dot" class="h-3.5 w-3.5 shrink-0 text-brand-amber"></i>
+                    <span class="flex-1 truncate group-hover:text-brand-amber">${f}</span>
+                  </button>
+                </li>`).join("")}
+            </ul>
+          </div>
+          <div class="mt-auto rounded-lg bg-white/5 p-3">
+            <p class="mb-2 text-xs font-medium text-muted">Key metrics</p>
+            <div class="space-y-2">
+              ${ch.metrics.map((m) => `
+                <div class="flex items-baseline justify-between gap-3">
+                  <span class="text-xs text-muted">${m.label}</span>
+                  <span class="text-sm font-semibold tabular-nums text-brand-amber">${renderChannelMetric(m)}</span>
+                </div>`).join("")}
+            </div>
+          </div>
+          <button onclick="openModal('${ch.id}')"
+            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-red px-3 py-2 text-sm font-medium text-ink hover:bg-brand-amber hover:text-base transition-colors">
+            View recent activity
+            <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
+          </button>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+function renderModal(channelId, feature) {
+  const root = document.getElementById("modal-root");
+  if (!channelId) { root.innerHTML = ""; return; }
+  const ch = CHANNELS.find((c) => c.id === channelId);
+
+  root.innerHTML = `
+    <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onclick="closeModal()">
+      <div class="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-panel shadow-2xl shadow-black/50 sm:max-w-lg sm:rounded-2xl" onclick="event.stopPropagation()">
+        <div class="flex items-center gap-3 px-5 py-4 bg-brand-red">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
+            <i data-lucide="${ch.icon}" class="h-5 w-5 text-ink"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-heading text-base font-bold text-ink">${ch.name}</p>
+            <p class="truncate text-xs text-ink/80">${feature ? `Filtered by: ${feature}` : ch.recentLabel}</p>
+          </div>
+          <button onclick="closeModal()" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-ink hover:bg-white/25" aria-label="Close">
+            <i data-lucide="x" class="h-4 w-4"></i>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-5">
+          <div class="mb-4 grid grid-cols-3 gap-2">
+            ${ch.metrics.map((m) => `
+              <div class="rounded-lg bg-white/5 p-2.5 text-center">
+                <p class="text-sm font-semibold text-brand-amber">${fmt(m.value)}${typeof m.value === "number" ? m.unit : ""}</p>
+                <p class="mt-0.5 text-[11px] leading-tight text-muted">${m.label}</p>
+              </div>`).join("")}
+          </div>
+          <p class="mb-2 text-xs font-medium text-muted">${ch.recentLabel}</p>
+          <ul class="space-y-2">
+            ${ch.recentItems.map((item) => `
+              <li class="flex items-start gap-3 rounded-lg border border-white/10 p-3 hover:border-white/20">
+                <i data-lucide="file-text" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
+                <div class="min-w-0 flex-1">
+                  <div class="flex items-start justify-between gap-2">
+                    <p class="text-sm font-medium text-ink">${item.title}</p>
+                    <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-white/10 text-muted"}">${item.status}</span>
+                  </div>
+                  <p class="mt-0.5 text-xs text-muted">${item.sub}</p>
+                  <div class="mt-1 flex items-center gap-1 text-[11px] text-muted">
+                    <i data-lucide="clock" class="h-3 w-3"></i>
+                    ${item.time}
+                  </div>
+                </div>
+              </li>`).join("")}
+          </ul>
+        </div>
+      </div>
+    </div>`;
+  lucide.createIcons();
+}
+
+// ---------------------------------------------------------------------------
+// Actions
+// ---------------------------------------------------------------------------
+
+function setTimeframe(id) {
+  state.timeframe = id;
+  renderAll();
+}
+function setServiceType(id) {
+  state.serviceType = id;
+  renderAll();
+}
+function openModal(channelId, feature) {
+  renderModal(channelId, feature || null);
+}
+function closeModal() {
+  renderModal(null);
+}
+
+function renderAll() {
+  renderKPIs();
+  renderFilterBar();
+  renderChannels();
+  lucide.createIcons();
+}
+
+renderAll();
+</script>
+</body>
+</html>
