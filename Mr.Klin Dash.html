@@ -43,7 +43,7 @@
   <div id="app-root" class="hidden">
     <div id="sidebar-overlay" onclick="closeMobileSidebar()" class="fixed inset-0 z-30 hidden bg-black/60 backdrop-blur-sm lg:hidden"></div>
     <div class="flex min-h-screen">
-      <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:static lg:z-0 lg:w-64 lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none"></aside>
+      <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:z-0 lg:h-screen lg:w-64 lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none"></aside>
 
       <div class="flex min-w-0 flex-1 flex-col">
         <header class="sticky top-0 z-20 border-b border-white/10 bg-panel/95 backdrop-blur">
@@ -942,7 +942,7 @@ function renderSidebar() {
   const widthClasses = collapsed ? "lg:w-20" : "lg:w-64";
   sidebar.className = `fixed inset-y-0 left-0 z-40 flex w-72 ${
     mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-  } flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:static lg:z-0 ${widthClasses} lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none`;
+  } flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:z-0 lg:h-screen ${widthClasses} lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none`;
 
   const newCount = countNewItems();
   const hideLabel = collapsed ? "lg:hidden" : "";
