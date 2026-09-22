@@ -86,14 +86,7 @@
               <button onclick="openMobileSidebar()" aria-label="Open menu" class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line/10 bg-line/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber lg:hidden">
                 <i data-lucide="menu" class="h-4.5 w-4.5"></i>
               </button>
-              <div>
-                <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
-                <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
-                <p class="mt-1 max-w-2xl text-sm text-muted">
-                  A single view of every way customers reach you — from the front counter to fleet contracts —
-                  with the metrics that matter for each.
-                </p>
-              </div>
+              <div id="page-header-text"></div>
             </div>
             <div class="flex shrink-0 items-center gap-2 self-start">
               <button id="theme-toggle" onclick="toggleTheme()" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line/10 bg-line/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber"></button>
@@ -111,8 +104,6 @@
       </div>
     </div>
   </div>
-
-  <div id="employee-root" class="hidden"></div>
 
 <script>
 // ---------------------------------------------------------------------------
@@ -361,6 +352,12 @@ const SECTIONS = [
   { id: "financials", label: "Financials", icon: "wallet" },
 ];
 
+// Employee accounts get a single-item nav — no Financials/Services, since
+// those carry revenue and channel-configuration data meant for admin/owner.
+const EMPLOYEE_SECTIONS = [
+  { id: "bookings", label: "Bookings", icon: "clipboard-list" },
+];
+
 // Sidebar UI state — desktop collapse persists across sessions, the mobile
 // drawer's open/closed state is session-only and lives outside `state` so it
 // isn't reset by every renderAll() triggered from filters/section changes.
@@ -514,7 +511,6 @@ function updateLoginRoleButtons() {
 
 function renderLogin() {
   document.getElementById("app-root").classList.add("hidden");
-  document.getElementById("employee-root").classList.add("hidden");
   const root = document.getElementById("login-root");
   root.innerHTML = `
     <div class="fixed inset-0 z-[100] flex items-center justify-center bg-canvas p-4">
@@ -583,16 +579,6 @@ function logout() {
   renderLogin();
 }
 
-function renderUserBadge(role, elementId) {
-  const el = document.getElementById(elementId || "user-badge");
-  if (!el) return;
-  const account = ACCOUNTS[role];
-  el.innerHTML = `
-    <span class="text-xs text-muted">Signed in as</span>
-    <span class="text-sm font-semibold text-ink">${account ? account.label : role}</span>
-    <button onclick="logout()" class="ml-2 rounded-lg border border-line/10 px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Log out</button>`;
-}
-
 function renderHeaderRolePill(role, elementId) {
   const el = document.getElementById(elementId);
   if (!el) return;
@@ -606,19 +592,20 @@ function renderHeaderRolePill(role, elementId) {
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
   currentRole = role;
+  // Employee only has the Bookings section; admin/owner default back to
+  // Overview if the previous session (in this same browser tab) left
+  // state.section on "bookings", which isn't one of their nav items.
   if (role === "employee") {
-    document.getElementById("app-root").classList.add("hidden");
-    document.getElementById("employee-root").classList.remove("hidden");
-    renderEmployeeView(role);
-  } else {
-    document.getElementById("employee-root").classList.add("hidden");
-    document.getElementById("app-root").classList.remove("hidden");
-    renderAll();
+    state.section = "bookings";
+  } else if (state.section === "bookings") {
+    state.section = "overview";
   }
+  document.getElementById("app-root").classList.remove("hidden");
+  renderAll();
 }
 
-function renderEmployeeView(role) {
-  const root = document.getElementById("employee-root");
+function renderBookingsSection() {
+  const root = document.getElementById("section-root");
   const bookingCounts = CHANNELS.map((ch) => ({
     name: ch.name,
     count: getDisplayRecentItems(ch).length,
@@ -627,77 +614,65 @@ function renderEmployeeView(role) {
   const vehicles = loadWalkinBookings();
 
   root.innerHTML = `
-    <div class="min-h-screen bg-canvas">
-      <header class="border-b border-line/10 bg-panel">
-        <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
-          <div>
-            <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
-            <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Employee View</h1>
-            <p class="mt-1 max-w-2xl text-sm text-muted">Booking counts and vehicle details for walk-in customers.</p>
-          </div>
-          <div id="employee-user-badge" class="flex shrink-0 items-center gap-2 self-start rounded-lg border border-line/10 bg-line/5 px-3 py-2"></div>
+    <div>
+      <p class="font-heading text-xl font-bold text-ink">Bookings</p>
+      <p class="mt-1 text-sm text-muted">Booking counts and vehicle details for walk-in customers.</p>
+    </div>
+    <div>
+      <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Number of bookings by channel</p>
+      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        ${bookingCounts.map((c) => `
+          <div class="rounded-2xl border border-line/10 bg-panel p-4 shadow-lg shadow-black/20">
+            <p class="truncate text-sm text-muted">${c.name}</p>
+            <p class="font-heading text-2xl font-bold text-ink tabular-nums">${c.count}</p>
+          </div>`).join("")}
+        <div class="rounded-2xl border border-brand-red/40 bg-brand-red/10 p-4 shadow-lg shadow-black/20">
+          <p class="text-sm text-brand-red">Total bookings</p>
+          <p class="font-heading text-2xl font-bold text-ink tabular-nums">${totalBookings}</p>
         </div>
-      </header>
-      <main class="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-        <div>
-          <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Number of bookings by channel</p>
-          <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            ${bookingCounts.map((c) => `
-              <div class="rounded-xl border border-line/10 bg-panel p-4">
-                <p class="truncate text-sm text-muted">${c.name}</p>
-                <p class="font-heading text-2xl font-bold text-ink tabular-nums">${c.count}</p>
-              </div>`).join("")}
-            <div class="rounded-xl border border-brand-red/40 bg-brand-red/10 p-4">
-              <p class="text-sm text-brand-red">Total bookings</p>
-              <p class="font-heading text-2xl font-bold text-ink tabular-nums">${totalBookings}</p>
-            </div>
-          </div>
-        </div>
-        <div>
-          <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Unit (vehicle) information — walk-in bookings</p>
-          <div class="overflow-x-auto rounded-xl border border-line/10 bg-panel">
-            <table class="w-full text-left text-sm">
-              <thead>
-                <tr class="border-b border-line/10 text-xs uppercase tracking-wide text-muted">
-                  <th class="whitespace-nowrap px-4 py-3">Owner</th>
-                  <th class="whitespace-nowrap px-4 py-3">Phone</th>
-                  <th class="whitespace-nowrap px-4 py-3">Vehicle</th>
-                  <th class="whitespace-nowrap px-4 py-3">Plate</th>
-                  <th class="whitespace-nowrap px-4 py-3">Service</th>
-                  <th class="whitespace-nowrap px-4 py-3">Visit</th>
-                  <th class="whitespace-nowrap px-4 py-3">Logged</th>
-                  <th class="whitespace-nowrap px-4 py-3">Status</th>
-                  <th class="whitespace-nowrap px-4 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${vehicles.length ? vehicles.map((v) => `
-                  <tr class="border-b border-line/5 last:border-0">
-                    <td class="whitespace-nowrap px-4 py-3 text-ink">${v.ownerName || "—"}</td>
-                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.phone || "—"}</td>
-                    <td class="whitespace-nowrap px-4 py-3 text-ink">${v.vehicle || "—"}</td>
-                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.plate || "—"}</td>
-                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.service || "—"}</td>
-                    <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
-                    <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
-                    <td class="whitespace-nowrap px-4 py-3">
-                      <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-line/10 text-muted"}">${v.status || "Booked"}</span>
-                    </td>
-                    <td class="whitespace-nowrap px-4 py-3">
-                      ${v.status === "Completed"
-                        ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-brand-amber"><i data-lucide="check" class="h-3.5 w-3.5"></i> Done</span>`
-                        : `<button onclick="markWalkinDone('${v.id}')" class="rounded-lg border border-brand-amber/40 px-2 py-1 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark as done</button>`}
-                    </td>
-                  </tr>`).join("") : `
-                  <tr><td colspan="9" class="px-4 py-6 text-center text-muted">No walk-in vehicle records yet.</td></tr>`}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
+      </div>
+    </div>
+    <div>
+      <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Unit (vehicle) information — walk-in bookings</p>
+      <div class="overflow-x-auto rounded-2xl border border-line/10 bg-panel shadow-lg shadow-black/20">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-line/10 text-xs uppercase tracking-wide text-muted">
+              <th class="whitespace-nowrap px-4 py-3">Owner</th>
+              <th class="whitespace-nowrap px-4 py-3">Phone</th>
+              <th class="whitespace-nowrap px-4 py-3">Vehicle</th>
+              <th class="whitespace-nowrap px-4 py-3">Plate</th>
+              <th class="whitespace-nowrap px-4 py-3">Service</th>
+              <th class="whitespace-nowrap px-4 py-3">Visit</th>
+              <th class="whitespace-nowrap px-4 py-3">Logged</th>
+              <th class="whitespace-nowrap px-4 py-3">Status</th>
+              <th class="whitespace-nowrap px-4 py-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${vehicles.length ? vehicles.map((v) => `
+              <tr class="border-b border-line/5 last:border-0">
+                <td class="whitespace-nowrap px-4 py-3 text-ink">${v.ownerName || "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-muted">${v.phone || "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-ink">${v.vehicle || "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-muted">${v.plate || "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-muted">${v.service || "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3">
+                  <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-line/10 text-muted"}">${v.status || "Booked"}</span>
+                </td>
+                <td class="whitespace-nowrap px-4 py-3">
+                  ${v.status === "Completed"
+                    ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-brand-amber"><i data-lucide="check" class="h-3.5 w-3.5"></i> Done</span>`
+                    : `<button onclick="markWalkinDone('${v.id}')" class="rounded-lg border border-brand-amber/40 px-2 py-1 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark as done</button>`}
+                </td>
+              </tr>`).join("") : `
+              <tr><td colspan="9" class="px-4 py-6 text-center text-muted">No walk-in vehicle records yet.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
     </div>`;
-  renderUserBadge(role, "employee-user-badge");
-  lucide.createIcons();
 }
 
 function markWalkinDone(id) {
@@ -706,7 +681,7 @@ function markWalkinDone(id) {
   if (!booking) return;
   booking.status = "Completed";
   saveWalkinBookings(bookings);
-  renderEmployeeView(loadSession().role);
+  renderAll();
 }
 
 function bootstrap() {
@@ -1084,7 +1059,8 @@ function renderSidebar() {
   const centerItem = collapsed ? "lg:justify-center lg:px-0" : "";
 
   const overdueInvoiceCount = INVOICES.filter((i) => i.status === "Overdue").length;
-  const sectionsHtml = SECTIONS.map((s) => {
+  const navSections = currentRole === "employee" ? EMPLOYEE_SECTIONS : SECTIONS;
+  const sectionsHtml = navSections.map((s) => {
     const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : 0;
     const active = state.section === s.id;
     return `
@@ -1415,11 +1391,29 @@ function renderServicesSection() {
   renderServiceChannelsGrid();
 }
 
+function renderPageHeader() {
+  const el = document.getElementById("page-header-text");
+  if (!el) return;
+  el.innerHTML = currentRole === "employee"
+    ? `<p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
+       <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Employee View</h1>
+       <p class="mt-1 max-w-2xl text-sm text-muted">Booking counts and vehicle details for walk-in customers.</p>`
+    : `<p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
+       <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
+       <p class="mt-1 max-w-2xl text-sm text-muted">
+         A single view of every way customers reach you — from the front counter to fleet contracts —
+         with the metrics that matter for each.
+       </p>`;
+}
+
 function renderAll() {
   renderSidebar();
   renderHeaderRolePill(currentRole, "user-badge");
   renderThemeToggle();
-  if (state.section === "services") {
+  renderPageHeader();
+  if (currentRole === "employee") {
+    renderBookingsSection();
+  } else if (state.section === "services") {
     renderServicesSection();
   } else if (state.section === "financials") {
     renderFinancialsSection();
