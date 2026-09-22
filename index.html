@@ -41,34 +41,25 @@
   <div id="login-root"></div>
 
   <div id="app-root" class="hidden">
-    <div class="flex flex-col lg:min-h-screen lg:flex-row">
-      <aside class="flex shrink-0 flex-col border-b border-white/10 bg-panel lg:h-screen lg:w-64 lg:border-b-0 lg:border-r lg:sticky lg:top-0">
-        <div class="flex items-center gap-3 border-b border-white/10 px-4 py-4">
-          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-red">
-            <i data-lucide="spray-can" class="h-4.5 w-4.5 text-ink"></i>
-          </div>
-          <div class="min-w-0">
-            <p class="truncate text-[11px] font-medium uppercase tracking-wide text-muted">MR. Klin</p>
-            <p class="truncate font-heading text-sm font-bold text-ink">Trading Services Corp.</p>
-          </div>
-        </div>
-        <div class="flex-1 overflow-y-auto p-3">
-          <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted">Dashboard</p>
-          <nav id="sidebar-nav" class="space-y-1"></nav>
-        </div>
-        <div id="sidebar-profile" class="border-t border-white/10 p-4"></div>
-      </aside>
+    <div id="sidebar-overlay" onclick="closeMobileSidebar()" class="fixed inset-0 z-30 hidden bg-black/60 backdrop-blur-sm lg:hidden"></div>
+    <div class="flex min-h-screen">
+      <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:static lg:z-0 lg:w-64 lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none"></aside>
 
       <div class="flex min-w-0 flex-1 flex-col">
-        <header class="border-b border-white/10 bg-panel">
+        <header class="sticky top-0 z-20 border-b border-white/10 bg-panel/95 backdrop-blur">
           <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
-            <div>
-              <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
-              <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
-              <p class="mt-1 max-w-2xl text-sm text-muted">
-                A single view of every way customers reach you — from the front counter to fleet contracts —
-                with the metrics that matter for each.
-              </p>
+            <div class="flex items-start gap-3">
+              <button onclick="openMobileSidebar()" aria-label="Open menu" class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber lg:hidden">
+                <i data-lucide="menu" class="h-4.5 w-4.5"></i>
+              </button>
+              <div>
+                <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
+                <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
+                <p class="mt-1 max-w-2xl text-sm text-muted">
+                  A single view of every way customers reach you — from the front counter to fleet contracts —
+                  with the metrics that matter for each.
+                </p>
+              </div>
             </div>
             <div id="user-badge" class="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 bg-white/5 px-3 py-1.5"></div>
           </div>
@@ -265,6 +256,42 @@ const SECTIONS = [
   { id: "services", label: "Services", icon: "wrench" },
 ];
 
+// Sidebar UI state — desktop collapse persists across sessions, the mobile
+// drawer's open/closed state is session-only and lives outside `state` so it
+// isn't reset by every renderAll() triggered from filters/section changes.
+const SIDEBAR_COLLAPSED_KEY = "mrklin_sidebar_collapsed_v1";
+let sidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+let mobileSidebarOpen = false;
+
+function toggleSidebarCollapse() {
+  sidebarCollapsed = !sidebarCollapsed;
+  localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed ? "1" : "0");
+  renderSidebar();
+}
+function openMobileSidebar() {
+  mobileSidebarOpen = true;
+  applySidebarOpenState();
+}
+function closeMobileSidebar() {
+  mobileSidebarOpen = false;
+  applySidebarOpenState();
+}
+function applySidebarOpenState() {
+  const overlay = document.getElementById("sidebar-overlay");
+  const sidebar = document.getElementById("sidebar");
+  if (overlay) overlay.classList.toggle("hidden", !mobileSidebarOpen);
+  if (sidebar) sidebar.classList.toggle("-translate-x-full", !mobileSidebarOpen);
+  if (sidebar) sidebar.classList.toggle("translate-x-0", mobileSidebarOpen);
+}
+function handleChannelNavClick(channelId) {
+  closeMobileSidebar();
+  openModal(channelId);
+}
+function handleSectionNavClick(sectionId) {
+  closeMobileSidebar();
+  setSection(sectionId);
+}
+
 function getFactor() {
   return TIMEFRAMES.find((t) => t.id === state.timeframe).factor;
 }
@@ -428,22 +455,6 @@ function renderHeaderRolePill(role, elementId) {
     <span class="text-sm font-medium text-ink">${account ? account.label : role}</span>`;
 }
 
-function renderSidebarProfile(role, elementId) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  const account = ACCOUNTS[role];
-  const label = account ? account.label : role;
-  const initials = label.slice(0, 2).toUpperCase();
-  el.innerHTML = `
-    <div class="flex items-center gap-3">
-      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-red/20 text-sm font-semibold text-brand-red">${initials}</div>
-      <div class="min-w-0 flex-1">
-        <p class="truncate text-sm font-semibold text-ink">${label}</p>
-        <p class="truncate text-xs text-muted">Signed in</p>
-      </div>
-    </div>
-    <button onclick="logout()" class="mt-3 w-full rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Log out</button>`;
-}
 
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
@@ -569,11 +580,12 @@ function renderKPIs() {
   el.innerHTML = KPIS.map((kpi) => {
     const value = scaleValue(kpi.base, kpi.flat);
     return `
-      <div class="flex items-center gap-4 rounded-xl border border-white/10 bg-panel p-4">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${kpi.ring}">
+      <div class="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-white/10 bg-panel p-4 shadow-lg shadow-black/20 transition-colors hover:border-white/20">
+        <div class="absolute inset-0 ${kpi.ring} opacity-0 transition-opacity group-hover:opacity-100"></div>
+        <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${kpi.ring}">
           <i data-lucide="${kpi.icon}" class="h-5 w-5 ${kpi.accent}"></i>
         </div>
-        <div class="min-w-0">
+        <div class="relative min-w-0">
           <p class="truncate text-sm text-muted">${kpi.label}</p>
           <p class="font-heading text-2xl font-bold text-ink tabular-nums">${fmt(value)}${kpi.unit}</p>
         </div>
@@ -584,17 +596,17 @@ function renderKPIs() {
 function renderFilterBar() {
   const el = document.getElementById("filter-bar");
   el.innerHTML = `
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-white/10 bg-panel px-4 py-3">
+    <div class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-panel px-4 py-3 shadow-lg shadow-black/20 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-2 text-muted">
         <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
         <span class="text-sm font-medium">Filters</span>
       </div>
       <div class="flex items-center gap-2">
         <i data-lucide="calendar-days" class="h-4 w-4 text-muted shrink-0"></i>
-        <div class="flex rounded-lg bg-white/5 p-1">
+        <div class="flex rounded-xl bg-white/5 p-1">
           ${TIMEFRAMES.map((tf) => `
             <button onclick="setTimeframe('${tf.id}')"
-              class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
                 state.timeframe === tf.id ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
               }">${tf.label}</button>`).join("")}
         </div>
@@ -614,9 +626,9 @@ function renderChannels() {
 
 function renderChannelCard(ch) {
   return `
-      <div class="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-panel">
-        <button onclick="openModal('${ch.id}')" class="flex items-center gap-3 px-5 py-4 text-left bg-brand-red">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
+      <div class="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-panel shadow-lg shadow-black/20 transition-colors hover:border-white/20">
+        <button onclick="openModal('${ch.id}')" class="flex items-center gap-3 bg-gradient-to-r from-brand-red to-brand-red/80 px-5 py-4 text-left">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
             <i data-lucide="${ch.icon}" class="h-5 w-5 text-ink"></i>
           </div>
           <div class="min-w-0 flex-1">
@@ -627,20 +639,20 @@ function renderChannelCard(ch) {
         </button>
         <div class="flex flex-1 flex-col gap-4 p-5">
           <div>
-            <p class="mb-2 text-xs font-medium text-muted">Features</p>
-            <ul class="space-y-1.5">
+            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Features</p>
+            <ul class="space-y-1">
               ${ch.features.map((f) => `
                 <li>
                   <button onclick="openModal('${ch.id}', '${f.replace(/'/g, "\\'")}')"
-                    class="group flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left text-sm text-muted hover:bg-white/5">
+                    class="group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-muted transition-colors hover:bg-white/5">
                     <i data-lucide="circle-dot" class="h-3.5 w-3.5 shrink-0 text-brand-amber"></i>
                     <span class="flex-1 truncate group-hover:text-brand-amber">${f}</span>
                   </button>
                 </li>`).join("")}
             </ul>
           </div>
-          <div class="mt-auto rounded-lg bg-white/5 p-3">
-            <p class="mb-2 text-xs font-medium text-muted">Key metrics</p>
+          <div class="mt-auto rounded-xl bg-white/5 p-3.5">
+            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Key metrics</p>
             <div class="space-y-2">
               ${ch.metrics.map((m) => `
                 <div class="flex items-baseline justify-between gap-3">
@@ -651,12 +663,12 @@ function renderChannelCard(ch) {
           </div>
           ${ch.id === "walkin" ? `
           <button onclick="openBookingForm()"
-            class="inline-flex items-center justify-center gap-1.5 rounded-lg border border-brand-amber/40 px-3 py-2 text-sm font-medium text-brand-amber hover:bg-brand-amber/10 transition-colors">
+            class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-brand-amber/40 px-3 py-2 text-sm font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">
             <i data-lucide="user-plus" class="h-3.5 w-3.5"></i>
             New walk-in booking
           </button>` : ""}
           <button onclick="openModal('${ch.id}')"
-            class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-red px-3 py-2 text-sm font-medium text-ink hover:bg-brand-amber hover:text-base transition-colors">
+            class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand-red px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-brand-amber hover:text-base">
             View recent activity
             <i data-lucide="chevron-right" class="h-3.5 w-3.5"></i>
           </button>
@@ -678,15 +690,15 @@ function renderModal() {
   root.innerHTML = `
     <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onclick="closeModal()">
       <div class="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-panel shadow-2xl shadow-black/50 sm:max-w-2xl sm:rounded-2xl" onclick="event.stopPropagation()">
-        <div class="flex items-center gap-3 px-5 py-4 bg-brand-red">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
+        <div class="flex items-center gap-3 bg-gradient-to-r from-brand-red to-brand-red/80 px-5 py-4">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
             <i data-lucide="${ch.icon}" class="h-5 w-5 text-ink"></i>
           </div>
           <div class="min-w-0 flex-1">
             <p class="truncate font-heading text-base font-bold text-ink">${ch.name}</p>
             <p class="truncate text-xs text-ink/80">${feature ? `Filtered by: ${feature}` : ch.recentLabel}</p>
           </div>
-          <button onclick="closeModal()" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-ink hover:bg-white/25" aria-label="Close">
+          <button onclick="closeModal()" class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-ink transition-colors hover:bg-white/25" aria-label="Close">
             <i data-lucide="x" class="h-4 w-4"></i>
           </button>
         </div>
@@ -707,15 +719,15 @@ function renderModal() {
           <div class="flex-1 overflow-y-auto p-5">
             <div class="mb-4 grid grid-cols-3 gap-2">
               ${ch.metrics.map((m) => `
-                <div class="rounded-lg bg-white/5 p-2.5 text-center">
+                <div class="rounded-xl bg-white/5 p-2.5 text-center">
                   <p class="text-sm font-semibold text-brand-amber">${fmt(m.value)}${typeof m.value === "number" ? m.unit : ""}</p>
                   <p class="mt-0.5 text-[11px] leading-tight text-muted">${m.label}</p>
                 </div>`).join("")}
             </div>
-            <p class="mb-2 text-xs font-medium text-muted">${ch.recentLabel}${status !== "Overview" ? ` — ${status}` : ""}</p>
+            <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">${ch.recentLabel}${status !== "Overview" ? ` — ${status}` : ""}</p>
             <ul class="space-y-2">
               ${filteredItems.length ? filteredItems.map((item) => `
-                <li class="flex items-start gap-3 rounded-lg border border-white/10 p-3 hover:border-white/20">
+                <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3 transition-colors hover:border-white/20">
                   <i data-lucide="file-text" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-start justify-between gap-2">
@@ -893,22 +905,92 @@ function countNewItems() {
 }
 
 function renderSidebar() {
-  const el = document.getElementById("sidebar-nav");
-  if (!el) return;
+  const sidebar = document.getElementById("sidebar");
+  if (!sidebar) return;
+
+  const collapsed = sidebarCollapsed;
+  const widthClasses = collapsed ? "lg:w-20" : "lg:w-64";
+  sidebar.className = `fixed inset-y-0 left-0 z-40 flex w-72 ${
+    mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+  } flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:static lg:z-0 ${widthClasses} lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none`;
+
   const newCount = countNewItems();
-  el.innerHTML = SECTIONS.map((s) => {
+  const hideLabel = collapsed ? "lg:hidden" : "";
+  const centerItem = collapsed ? "lg:justify-center lg:px-0" : "";
+
+  const sectionsHtml = SECTIONS.map((s) => {
     const badge = s.id === "overview" ? newCount : 0;
     const active = state.section === s.id;
     return `
-    <button onclick="setSection('${s.id}')"
-      class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+    <button onclick="handleSectionNavClick('${s.id}')" title="${s.label}"
+      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
         active ? "bg-brand-red text-ink" : "text-muted hover:bg-white/5 hover:text-brand-amber"
-      }">
+      } ${centerItem}">
       <i data-lucide="${s.icon}" class="h-4 w-4 shrink-0"></i>
-      <span class="flex-1 truncate">${s.label}</span>
-      ${badge > 0 ? `<span class="shrink-0 rounded-full ${active ? "bg-white/20 text-ink" : "bg-brand-red/20 text-brand-red"} px-2 py-0.5 text-[11px] font-semibold">${badge}</span>` : ""}
+      <span class="flex-1 truncate ${hideLabel}">${s.label}</span>
+      ${badge > 0 ? `<span class="shrink-0 rounded-full ${active ? "bg-white/20 text-ink" : "bg-brand-red/20 text-brand-red"} px-2 py-0.5 text-[11px] font-semibold ${hideLabel}">${badge}</span>` : ""}
     </button>`;
   }).join("");
+
+  const channelsHtml = CHANNELS.map((ch) => {
+    const newInChannel = getDisplayRecentItems(ch).filter((i) => i.status === "New").length;
+    return `
+    <button onclick="handleChannelNavClick('${ch.id}')" title="${ch.name}"
+      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-brand-amber ${centerItem}">
+      <i data-lucide="${ch.icon}" class="h-4 w-4 shrink-0"></i>
+      <span class="flex-1 truncate ${hideLabel}">${ch.name}</span>
+      ${newInChannel > 0 ? `<span class="shrink-0 rounded-full bg-brand-amber/15 px-2 py-0.5 text-[11px] font-semibold text-brand-amber ${hideLabel}">${newInChannel}</span>` : ""}
+    </button>`;
+  }).join("");
+
+  const account = ACCOUNTS[currentRole];
+  const label = account ? account.label : currentRole;
+  const initials = (label || "?").slice(0, 2).toUpperCase();
+
+  sidebar.innerHTML = `
+    <div class="flex items-center gap-3 border-b border-white/10 px-4 py-4 ${collapsed ? "lg:justify-center lg:px-2" : ""}">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-red">
+        <i data-lucide="spray-can" class="h-4.5 w-4.5 text-ink"></i>
+      </div>
+      <div class="min-w-0 ${hideLabel}">
+        <p class="truncate text-[11px] font-medium uppercase tracking-wide text-muted">MR. Klin</p>
+        <p class="truncate font-heading text-sm font-bold text-ink">Trading Services Corp.</p>
+      </div>
+      <button onclick="closeMobileSidebar()" aria-label="Close menu" class="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-white/5 hover:text-ink lg:hidden">
+        <i data-lucide="x" class="h-4 w-4"></i>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto overflow-x-hidden p-3">
+      <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted ${hideLabel}">Dashboard</p>
+      <nav class="space-y-1">${sectionsHtml}</nav>
+
+      <p class="mb-2 mt-5 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted ${hideLabel}">Channels</p>
+      <nav class="space-y-1">${channelsHtml}</nav>
+    </div>
+
+    <button onclick="toggleSidebarCollapse()" title="${collapsed ? "Expand sidebar" : "Collapse sidebar"}"
+      class="hidden items-center justify-center gap-2 border-t border-white/10 px-3 py-3 text-xs font-medium text-muted transition-colors hover:text-brand-amber lg:flex">
+      <i data-lucide="${collapsed ? "panel-left-open" : "panel-left-close"}" class="h-4 w-4 shrink-0"></i>
+      <span class="${hideLabel}">Collapse</span>
+    </button>
+
+    <div class="border-t border-white/10 p-4 ${collapsed ? "lg:px-2" : ""}">
+      <div class="flex items-center gap-3 ${collapsed ? "lg:justify-center" : ""}">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-red/20 text-sm font-semibold text-brand-red">${initials}</div>
+        <div class="min-w-0 flex-1 ${hideLabel}">
+          <p class="truncate text-sm font-semibold text-ink">${label}</p>
+          <p class="truncate text-xs text-muted">Signed in</p>
+        </div>
+      </div>
+      <button onclick="logout()" title="Log out"
+        class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">
+        <i data-lucide="log-out" class="h-3.5 w-3.5 shrink-0"></i>
+        <span class="${hideLabel}">Log out</span>
+      </button>
+    </div>`;
+
+  lucide.createIcons();
 }
 
 function renderOverviewSection() {
@@ -931,10 +1013,10 @@ function renderServiceTypeCards() {
     const active = state.serviceType === st.id;
     return `
       <button onclick="setServiceType('${st.id}')"
-        class="flex items-center gap-4 rounded-xl border p-4 text-left transition-colors ${
+        class="flex items-center gap-4 rounded-2xl border p-4 text-left shadow-lg shadow-black/20 transition-colors ${
           active ? "border-brand-amber bg-brand-amber/10" : "border-white/10 bg-panel hover:border-white/20"
         }">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${active ? "bg-brand-amber/20" : "bg-white/10"}">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${active ? "bg-brand-amber/20" : "bg-white/10"}">
           <i data-lucide="${icons[st.id]}" class="h-5 w-5 ${active ? "text-brand-amber" : "text-muted"}"></i>
         </div>
         <div class="min-w-0">
@@ -969,7 +1051,6 @@ function renderServicesSection() {
 
 function renderAll() {
   renderSidebar();
-  renderSidebarProfile(currentRole, "sidebar-profile");
   renderHeaderRolePill(currentRole, "user-badge");
   if (state.section === "services") {
     renderServicesSection();
