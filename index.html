@@ -534,9 +534,15 @@ function renderLogin() {
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Password</label>
-            <input required id="login-password" type="password" autofocus
-              class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
-              placeholder="Enter password" />
+            <div class="relative">
+              <input required id="login-password" type="password" autofocus
+                class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 pr-10 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+                placeholder="Enter password" />
+              <button type="button" id="login-password-toggle" onclick="toggleLoginPasswordVisibility()" aria-label="Show password"
+                class="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-muted transition-colors hover:text-brand-amber">
+                <i data-lucide="eye" class="h-4 w-4"></i>
+              </button>
+            </div>
           </div>
           <p id="login-error" class="hidden text-xs text-brand-red"></p>
           <button type="submit" class="w-full rounded-lg bg-brand-red px-4 py-2 text-sm font-medium text-white hover:bg-brand-amber hover:text-black transition-colors">Sign in</button>
@@ -544,6 +550,17 @@ function renderLogin() {
       </div>
     </div>`;
   updateLoginRoleButtons();
+  lucide.createIcons();
+}
+
+function toggleLoginPasswordVisibility() {
+  const input = document.getElementById("login-password");
+  const btn = document.getElementById("login-password-toggle");
+  const showing = input.type === "text";
+  input.type = showing ? "password" : "text";
+  btn.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+  btn.innerHTML = `<i data-lucide="${showing ? "eye" : "eye-off"}" class="h-4 w-4"></i>`;
+  lucide.createIcons();
 }
 
 function attemptLogin(event) {
