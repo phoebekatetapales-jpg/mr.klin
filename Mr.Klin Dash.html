@@ -236,6 +236,8 @@ const STATUS_STYLES = {
   Viewed: "bg-white/10 text-muted", Credited: "bg-brand-amber/15 text-brand-amber",
   Scheduled: "bg-white/10 text-muted", Sent: "bg-white/10 text-muted",
   Overdue: "bg-brand-red/15 text-brand-red", Onboarded: "bg-brand-amber/15 text-brand-amber",
+  Paid: "bg-brand-amber/15 text-brand-amber", Pending: "bg-white/10 text-muted",
+  Refunded: "bg-white/10 text-muted",
 };
 
 const KPIS = [
@@ -262,14 +264,64 @@ const INQUIRY_TREND = [
 const ATTENTION_STATUSES = ["Overdue", "Delayed", "Follow-up", "Abandoned", "New"];
 
 // ---------------------------------------------------------------------------
+// Financials data
+// ---------------------------------------------------------------------------
+
+// Illustrative same-day transaction log — Total Revenue, Average Ticket and
+// Transactions on the Financials page are all derived from this list (via
+// scaleValue for the Today/Week/Month toggle), so the KPI row, the channel
+// breakdown, and the list below always agree with each other.
+const TRANSACTIONS = [
+  { id: "tx-1", channelId: "walkin", service: "Full interior detail", customer: "R. Bautista", amount: 2200, method: "Cash", status: "Paid", time: "18 min ago" },
+  { id: "tx-2", channelId: "mobile", service: "Home service — full detail", customer: "Elm Street resident", amount: 3500, method: "GCash", status: "Paid", time: "1 hr ago" },
+  { id: "tx-3", channelId: "b2b", service: "Fleet wash — 6 sedans", customer: "Downtown office lot", amount: 9600, method: "Bank Transfer", status: "Pending", time: "2 hr ago" },
+  { id: "tx-4", channelId: "web", service: "Interior shampoo + odor treatment", customer: "Online booking #A1183", amount: 2800, method: "Card", status: "Paid", time: "3 hr ago" },
+  { id: "tx-5", channelId: "loyalty", service: "Ceramic spray coat (reward applied)", customer: "Gold member", amount: 1400, method: "GCash", status: "Paid", time: "4 hr ago" },
+  { id: "tx-6", channelId: "social", service: "Engine bay cleaning", customer: "IG DM lead", amount: 900, method: "Cash", status: "Refunded", time: "5 hr ago" },
+  { id: "tx-7", channelId: "mobile", service: "Ceramic spray coat, driveway job", customer: "Birchwood Ct.", amount: 3200, method: "Card", status: "Paid", time: "6 hr ago" },
+  { id: "tx-8", channelId: "walkin", service: "Standard wash & wax", customer: "F-150 owner", amount: 650, method: "Cash", status: "Paid", time: "Yesterday" },
+  { id: "tx-9", channelId: "b2b", service: "Monthly wash cycle deposit", customer: "Riverside Logistics", amount: 6000, method: "Bank Transfer", status: "Paid", time: "Yesterday" },
+];
+
+// Unpaid B2B invoices — mutated in place by markInvoicePaid() rather than
+// persisted, same as the rest of the channel mock data (only walk-in
+// bookings persist to localStorage).
+const INVOICES = [
+  { id: "inv-1", account: "Riverside Logistics", amount: 18000, agingDays: 3, status: "Sent" },
+  { id: "inv-2", account: "Metro Realty", amount: 9600, agingDays: 5, status: "Overdue" },
+  { id: "inv-3", account: "Greenway Landscaping", amount: 7200, agingDays: 0, status: "Sent" },
+  { id: "inv-4", account: "Coastal Rentals", amount: 14400, agingDays: 12, status: "Overdue" },
+  { id: "inv-5", account: "Sunridge Property Mgmt", amount: 5400, agingDays: 1, status: "Sent" },
+];
+
+const REVENUE_TREND = [
+  { m: "Apr", pct: 62 },
+  { m: "May", pct: 58 },
+  { m: "Jun", pct: 70 },
+  { m: "Jul", pct: 75 },
+  { m: "Aug", pct: 69 },
+  { m: "Sep", pct: 91 },
+];
+
+const PAYMENT_METHOD_ICON = { Cash: "banknote", GCash: "smartphone", Card: "credit-card", "Bank Transfer": "landmark" };
+
+function peso(n) {
+  return "₱" + fmt(n);
+}
+function paidTransactions() {
+  return TRANSACTIONS.filter((t) => t.status === "Paid");
+}
+
+// ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
 
-const state = { timeframe: "today", serviceType: "all", section: "overview" };
+const state = { timeframe: "today", serviceType: "all", section: "overview", transactionFilter: "All" };
 
 const SECTIONS = [
   { id: "overview", label: "Overview", icon: "layout-dashboard" },
   { id: "services", label: "Services", icon: "wrench" },
+  { id: "financials", label: "Financials", icon: "wallet" },
 ];
 
 // Sidebar UI state — desktop collapse persists across sessions, the mobile
@@ -591,16 +643,20 @@ function bootstrap() {
 // Renderers
 // ---------------------------------------------------------------------------
 
+function statCard(label, value, sub) {
+  return `
+    <div class="rounded-2xl border border-white/10 bg-panel p-4 shadow-lg shadow-black/20 transition-colors hover:border-white/20">
+      <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-muted">${label}</p>
+      <p class="mt-1.5 font-heading text-2xl font-bold text-ink tabular-nums">${value}</p>
+      <p class="mt-1 truncate text-xs text-muted">${sub}</p>
+    </div>`;
+}
+
 function renderKPIs() {
   const el = document.getElementById("kpi-header");
   el.innerHTML = KPIS.map((kpi) => {
     const value = scaleValue(kpi.base, kpi.flat);
-    return `
-      <div class="rounded-2xl border border-white/10 bg-panel p-4 shadow-lg shadow-black/20 transition-colors hover:border-white/20">
-        <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-muted">${kpi.label}</p>
-        <p class="mt-1.5 font-heading text-2xl font-bold text-ink tabular-nums">${fmt(value)}${kpi.unit}</p>
-        <p class="mt-1 truncate text-xs text-muted">${kpi.sub}</p>
-      </div>`;
+    return statCard(kpi.label, fmt(value) + kpi.unit, kpi.sub);
   }).join("");
 }
 
@@ -948,8 +1004,9 @@ function renderSidebar() {
   const hideLabel = collapsed ? "lg:hidden" : "";
   const centerItem = collapsed ? "lg:justify-center lg:px-0" : "";
 
+  const overdueInvoiceCount = INVOICES.filter((i) => i.status === "Overdue").length;
   const sectionsHtml = SECTIONS.map((s) => {
-    const badge = s.id === "overview" ? newCount : 0;
+    const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : 0;
     const active = state.section === s.id;
     return `
     <button onclick="handleSectionNavClick('${s.id}')" title="${s.label}"
@@ -1047,11 +1104,11 @@ function renderAttentionList() {
     </li>`).join("") + `</ul>`;
 }
 
-function renderTrendChart() {
+function barTrendHtml(data, caption) {
   return `
     <div class="flex items-end justify-between gap-2 sm:gap-3" style="height:140px">
-      ${INQUIRY_TREND.map((h, i) => {
-        const isCurrent = i === INQUIRY_TREND.length - 1;
+      ${data.map((h, i) => {
+        const isCurrent = i === data.length - 1;
         return `
         <div class="flex flex-1 flex-col items-center gap-2">
           <div class="flex w-full flex-1 items-end">
@@ -1061,7 +1118,7 @@ function renderTrendChart() {
         </div>`;
       }).join("")}
     </div>
-    <p class="mt-4 text-xs text-muted">Inquiry volume relative to this month's peak — updates as new channels report in.</p>`;
+    <p class="mt-4 text-xs text-muted">${caption}</p>`;
 }
 
 function renderLatestActivityList() {
@@ -1104,7 +1161,7 @@ function renderOverviewSection() {
     <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       ${overviewCard("Needs your attention", renderAttentionList())}
-      ${overviewCard("Inquiry trend, last six months", renderTrendChart())}
+      ${overviewCard("Inquiry trend, last six months", barTrendHtml(INQUIRY_TREND, "Inquiry volume relative to this month's peak — updates as new channels report in."))}
     </div>
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       ${overviewCard("Latest activity", renderLatestActivityList(), `<button onclick="setSection('services')" class="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Open all</button>`)}
@@ -1115,6 +1172,123 @@ function renderOverviewSection() {
   renderKPIs();
   renderFilterBar();
   renderChannels();
+}
+
+function renderRevenueByChannel() {
+  const paid = paidTransactions();
+  const total = paid.reduce((s, t) => s + t.amount, 0) || 1;
+  const rows = CHANNELS.map((ch) => {
+    const amount = paid.filter((t) => t.channelId === ch.id).reduce((s, t) => s + t.amount, 0);
+    return { ch, amount, pct: Math.round((amount / total) * 100) };
+  }).filter((r) => r.amount > 0).sort((a, b) => b.amount - a.amount);
+
+  if (!rows.length) return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">No paid transactions yet.</p>`;
+  return `<ul class="space-y-3">` + rows.map((r) => `
+    <li>
+      <div class="mb-1 flex items-center justify-between gap-2 text-sm">
+        <span class="flex items-center gap-2 text-ink"><i data-lucide="${r.ch.icon}" class="h-3.5 w-3.5 shrink-0 text-brand-amber"></i><span class="truncate">${r.ch.name}</span></span>
+        <span class="shrink-0 font-semibold tabular-nums text-ink">${peso(r.amount)}</span>
+      </div>
+      <div class="h-2 w-full overflow-hidden rounded-full bg-white/10">
+        <div class="h-full rounded-full bg-brand-red" style="width:${r.pct}%"></div>
+      </div>
+    </li>`).join("") + `</ul>`;
+}
+
+function setTransactionFilter(status) {
+  state.transactionFilter = status;
+  renderAll();
+}
+
+function renderTransactionFilterRow() {
+  const filters = ["All", "Paid", "Pending", "Refunded"];
+  return `<div class="mb-3 flex flex-wrap gap-2">` + filters.map((f) => `
+    <button onclick="setTransactionFilter('${f}')"
+      class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+        state.transactionFilter === f ? "bg-brand-red text-ink" : "bg-white/5 text-muted hover:text-brand-amber"
+      }">${f}</button>`).join("") + `</div>`;
+}
+
+function renderTransactionsList() {
+  const filtered = state.transactionFilter === "All" ? TRANSACTIONS : TRANSACTIONS.filter((t) => t.status === state.transactionFilter);
+  if (!filtered.length) return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">No transactions with this status.</p>`;
+  return `<ul class="space-y-2">` + filtered.map((t) => {
+    const ch = CHANNELS.find((c) => c.id === t.channelId);
+    return `
+    <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3">
+      <i data-lucide="${ch.icon}" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium text-ink">${t.service}</p>
+        <div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted">
+          <span class="truncate">${t.customer}</span>
+          <span class="inline-flex shrink-0 items-center gap-1"><i data-lucide="${PAYMENT_METHOD_ICON[t.method]}" class="h-3 w-3"></i>${t.method}</span>
+          <span class="shrink-0">${t.time}</span>
+        </div>
+      </div>
+      <div class="flex shrink-0 flex-col items-end gap-1">
+        <span class="text-sm font-semibold tabular-nums text-ink">${peso(t.amount)}</span>
+        <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[t.status] || "bg-white/10 text-muted"}">${t.status}</span>
+      </div>
+    </li>`;
+  }).join("") + `</ul>`;
+}
+
+function markInvoicePaid(id) {
+  const inv = INVOICES.find((i) => i.id === id);
+  if (!inv) return;
+  inv.status = "Paid";
+  renderAll();
+}
+
+function renderInvoicesList() {
+  if (!INVOICES.length) return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">No outstanding invoices.</p>`;
+  return `<ul class="space-y-2">` + INVOICES.map((inv) => `
+    <li class="flex items-center gap-3 rounded-xl border border-white/10 p-3">
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium text-ink">${inv.account}</p>
+        <p class="mt-0.5 text-xs text-muted">${inv.status === "Overdue" ? inv.agingDays + " day(s) overdue" : inv.agingDays === 0 ? "Sent today" : "Sent " + inv.agingDays + " day(s) ago"}</p>
+      </div>
+      <span class="shrink-0 text-sm font-semibold tabular-nums text-ink">${peso(inv.amount)}</span>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[inv.status] || "bg-white/10 text-muted"}">${inv.status}</span>
+      ${inv.status !== "Paid"
+        ? `<button onclick="markInvoicePaid('${inv.id}')" class="shrink-0 rounded-lg border border-brand-amber/40 px-3 py-1.5 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark paid</button>`
+        : `<span class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-amber"><i data-lucide="check" class="h-3.5 w-3.5"></i>Paid</span>`}
+    </li>`).join("") + `</ul>`;
+}
+
+function renderFinancialsSection() {
+  const root = document.getElementById("section-root");
+  const paid = paidTransactions();
+  const totalRevenue = paid.reduce((s, t) => s + t.amount, 0);
+  const avgTicket = paid.length ? Math.round(totalRevenue / paid.length) : 0;
+  const unpaidInvoices = INVOICES.filter((i) => i.status !== "Paid");
+  const outstandingTotal = unpaidInvoices.reduce((s, i) => s + i.amount, 0);
+
+  const financialKpis = [
+    { label: "Total Revenue", value: peso(scaleValue(totalRevenue, false)), sub: "Across all channels" },
+    { label: "Average Ticket", value: peso(avgTicket), sub: "Per completed service" },
+    { label: "Transactions", value: fmt(scaleValue(paid.length, false)), sub: "Completed payments" },
+    { label: "Outstanding Invoices", value: peso(outstandingTotal), sub: `${unpaidInvoices.length} invoice(s) pending` },
+  ];
+
+  root.innerHTML = `
+    <div>
+      <p class="font-heading text-xl font-bold text-ink">Financials</p>
+      <p class="mt-1 text-sm text-muted">Revenue, transactions, and outstanding invoices across every channel.</p>
+    </div>
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      ${financialKpis.map((k) => statCard(k.label, k.value, k.sub)).join("")}
+    </div>
+    <div id="filter-bar"></div>
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      ${overviewCard("Revenue trend, last six months", barTrendHtml(REVENUE_TREND, "Revenue relative to this month's peak — figures are illustrative."))}
+      ${overviewCard("Revenue by channel", renderRevenueByChannel())}
+    </div>
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      ${overviewCard("Recent transactions", renderTransactionFilterRow() + renderTransactionsList())}
+      ${overviewCard("Outstanding invoices", renderInvoicesList())}
+    </div>`;
+  renderFilterBar();
 }
 
 function renderServiceTypeCards() {
@@ -1167,6 +1341,8 @@ function renderAll() {
   renderHeaderRolePill(currentRole, "user-badge");
   if (state.section === "services") {
     renderServicesSection();
+  } else if (state.section === "financials") {
+    renderFinancialsSection();
   } else {
     renderOverviewSection();
   }
