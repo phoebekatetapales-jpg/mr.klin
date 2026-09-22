@@ -349,24 +349,21 @@ const state = { timeframe: "today", serviceType: "all", section: "overview", tra
 // Nav is role-scoped: Admin runs day-to-day operations (no revenue data or
 // account management); Owner sees everything, including Financials and
 // User Access; Employee gets just their booking queue.
-const ADMIN_SECTIONS = [
-  { id: "overview", label: "Overview", icon: "layout-dashboard" },
-  { id: "services", label: "Services", icon: "wrench" },
-];
-const OWNER_SECTIONS = [
+const ALL_SECTIONS = [
   { id: "overview", label: "Overview", icon: "layout-dashboard" },
   { id: "services", label: "Services", icon: "wrench" },
   { id: "financials", label: "Financials", icon: "wallet" },
   { id: "access", label: "User Access", icon: "shield" },
-];
-const EMPLOYEE_SECTIONS = [
   { id: "bookings", label: "Bookings", icon: "clipboard-list" },
 ];
 
+// Per-role page access lives on ACCOUNTS[role].sections (set further down)
+// and is editable at runtime from the User Access page — this just maps
+// that list of ids to the full {id,label,icon} records for nav rendering.
 function sectionsForRole(role) {
-  if (role === "owner") return OWNER_SECTIONS;
-  if (role === "employee") return EMPLOYEE_SECTIONS;
-  return ADMIN_SECTIONS;
+  const account = ACCOUNTS[role];
+  if (!account) return [];
+  return ALL_SECTIONS.filter((s) => account.sections.includes(s.id));
 }
 
 // Sidebar UI state — desktop collapse persists across sessions, the mobile
@@ -488,9 +485,9 @@ function getDisplayRecentItems(channel) {
 // ---------------------------------------------------------------------------
 
 const ACCOUNTS = {
-  admin: { label: "Admin", password: "admin123", active: true },
-  owner: { label: "Owner", password: "owner123", active: true },
-  employee: { label: "Employee", password: "employee123", active: true },
+  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "services"] },
+  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "services", "financials", "access"] },
+  employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings"] },
 };
 const SESSION_KEY = "mrklin_session_v1";
 let loginRole = "admin";
@@ -606,14 +603,6 @@ function renderHeaderRolePill(role, elementId) {
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
   currentRole = role;
-  // Each role has its own nav; if the previous session (in this same
-  // browser tab) left state.section on something this role can't reach —
-  // e.g. an Admin inheriting "financials" left over from an Owner session —
-  // fall back to that role's first section instead.
-  const allowedSections = sectionsForRole(role).map((s) => s.id);
-  if (!allowedSections.includes(state.section)) {
-    state.section = allowedSections[0];
-  }
   document.getElementById("app-root").classList.remove("hidden");
   renderAll();
 }
@@ -1421,7 +1410,22 @@ function renderPageHeader() {
        </p>`;
 }
 
-function accountAccessCard(role, accessDescription) {
+function sectionToggleRow(role, section) {
+  const account = ACCOUNTS[role];
+  const enabled = account.sections.includes(section.id);
+  const locked = role === currentRole && section.id === "access";
+  return `
+    <div class="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 ${locked ? "opacity-50" : ""}">
+      <span class="flex items-center gap-2 text-sm text-ink"><i data-lucide="${section.icon}" class="h-3.5 w-3.5 shrink-0 text-muted"></i><span class="truncate">${section.label}</span></span>
+      <button onclick="${locked ? "" : `toggleSectionAccess('${role}', '${section.id}')`}" role="switch" aria-checked="${enabled}"
+        title="${locked ? "You can't remove your own User Access permission" : enabled ? "Remove access" : "Grant access"}"
+        class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-brand-amber" : "bg-line/20"} ${locked ? "cursor-not-allowed" : ""}">
+        <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${enabled ? "translate-x-4" : "translate-x-1"}"></span>
+      </button>
+    </div>`;
+}
+
+function accountAccessCard(role) {
   const account = ACCOUNTS[role];
   const isSelf = role === currentRole;
   const active = account.active;
@@ -1434,7 +1438,7 @@ function accountAccessCard(role, accessDescription) {
           </div>
           <div class="min-w-0">
             <p class="truncate font-heading text-base font-bold text-ink">${account.label}</p>
-            <p class="truncate text-xs text-muted">Access: ${accessDescription}</p>
+            <p class="text-xs font-medium ${active ? "text-brand-amber" : "text-muted"}">${active ? "Sign-in enabled" : "Sign-in turned off"}</p>
           </div>
         </div>
         <button onclick="${isSelf ? "" : `toggleAccountActive('${role}')`}" role="switch" aria-checked="${active}"
@@ -1443,7 +1447,12 @@ function accountAccessCard(role, accessDescription) {
           <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${active ? "translate-x-6" : "translate-x-1"}"></span>
         </button>
       </div>
-      <p class="text-xs font-medium ${active ? "text-brand-amber" : "text-muted"}">${active ? "Sign-in enabled" : "Sign-in turned off"}</p>
+
+      <div>
+        <p class="mb-1 text-xs font-medium uppercase tracking-wide text-muted">Page access</p>
+        <div class="space-y-0.5">${ALL_SECTIONS.map((s) => sectionToggleRow(role, s)).join("")}</div>
+      </div>
+
       <form onsubmit="updateAccountPassword(event, '${role}')" class="space-y-2">
         <label class="block text-xs font-medium text-muted">Set new password</label>
         <div class="flex gap-2">
@@ -1463,6 +1472,17 @@ function toggleAccountActive(role) {
   lucide.createIcons();
 }
 
+function toggleSectionAccess(role, sectionId) {
+  if (role === currentRole && sectionId === "access") return;
+  const account = ACCOUNTS[role];
+  account.sections = account.sections.includes(sectionId)
+    ? account.sections.filter((id) => id !== sectionId)
+    : [...account.sections, sectionId];
+  // If this just revoked the section currentRole is standing on, renderAll()
+  // catches it and falls back to that role's first remaining section.
+  renderAll();
+}
+
 function updateAccountPassword(event, role) {
   event.preventDefault();
   const input = document.getElementById(`access-password-${role}`);
@@ -1473,40 +1493,42 @@ function updateAccountPassword(event, role) {
 
 function renderAccessSection() {
   const root = document.getElementById("section-root");
-  const roleAccess = {
-    admin: "Overview, Services",
-    owner: "Overview, Services, Financials, User Access",
-    employee: "Bookings",
-  };
   root.innerHTML = `
     <div>
       <p class="font-heading text-xl font-bold text-ink">User Access</p>
-      <p class="mt-1 text-sm text-muted">Who can sign in, what each role reaches, and password resets — visible to Owner only.</p>
+      <p class="mt-1 text-sm text-muted">Who can sign in, which pages each role can reach, and password resets — visible to Owner only.</p>
     </div>
     <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-      ${Object.keys(ACCOUNTS).map((role) => accountAccessCard(role, roleAccess[role])).join("")}
+      ${Object.keys(ACCOUNTS).map((role) => accountAccessCard(role)).join("")}
     </div>
     <p class="rounded-2xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-lg shadow-black/20">
-      This is a front-end-only demo login gate — password changes here apply for the current browser session only and reset on reload. There's no backend, so this does not protect sensitive data.
+      This is a front-end-only demo login gate — sign-in, page access, and password changes here apply for the current browser session only and reset on reload. There's no backend, so this does not protect sensitive data.
     </p>`;
 }
 
+const SECTION_RENDERERS = {
+  overview: renderOverviewSection,
+  services: renderServicesSection,
+  financials: renderFinancialsSection,
+  access: renderAccessSection,
+  bookings: renderBookingsSection,
+};
+
 function renderAll() {
+  // Fully data-driven on ACCOUNTS[role].sections: if a toggle on the User
+  // Access page just revoked the section currentRole is sitting on (most
+  // relevantly, an Owner editing their own permissions), fall back to
+  // whatever that role's first remaining section is.
+  const allowedSections = sectionsForRole(currentRole).map((s) => s.id);
+  if (!allowedSections.includes(state.section)) {
+    state.section = allowedSections[0] || "overview";
+  }
+
   renderSidebar();
   renderHeaderRolePill(currentRole, "user-badge");
   renderThemeToggle();
   renderPageHeader();
-  if (currentRole === "employee") {
-    renderBookingsSection();
-  } else if (state.section === "services") {
-    renderServicesSection();
-  } else if (state.section === "financials" && currentRole === "owner") {
-    renderFinancialsSection();
-  } else if (state.section === "access" && currentRole === "owner") {
-    renderAccessSection();
-  } else {
-    renderOverviewSection();
-  }
+  (SECTION_RENDERERS[state.section] || renderOverviewSection)();
   lucide.createIcons();
 }
 
