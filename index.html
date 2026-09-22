@@ -41,28 +41,47 @@
   <div id="login-root"></div>
 
   <div id="app-root" class="hidden">
-    <header class="border-b border-white/10 bg-panel">
-      <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
-        <div>
-          <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
-          <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
-          <p class="mt-1 max-w-2xl text-sm text-muted">
-            A single view of every way customers reach you — from the front counter to fleet contracts —
-            with the metrics that matter for each.
-          </p>
+    <div class="flex flex-col lg:min-h-screen lg:flex-row">
+      <aside class="flex shrink-0 flex-col border-b border-white/10 bg-panel lg:h-screen lg:w-64 lg:border-b-0 lg:border-r lg:sticky lg:top-0">
+        <div class="flex items-center gap-3 border-b border-white/10 px-4 py-4">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-red">
+            <i data-lucide="spray-can" class="h-4.5 w-4.5 text-ink"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="truncate text-[11px] font-medium uppercase tracking-wide text-muted">MR. Klin</p>
+            <p class="truncate font-heading text-sm font-bold text-ink">Trading Services Corp.</p>
+          </div>
         </div>
-        <div id="user-badge" class="flex shrink-0 items-center gap-2 self-start rounded-lg border border-white/10 bg-white/5 px-3 py-2"></div>
+        <div class="flex-1 overflow-y-auto p-3">
+          <p class="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-muted">Dashboard</p>
+          <nav id="sidebar-nav" class="space-y-1"></nav>
+        </div>
+        <div id="sidebar-profile" class="border-t border-white/10 p-4"></div>
+      </aside>
+
+      <div class="flex min-w-0 flex-1 flex-col">
+        <header class="border-b border-white/10 bg-panel">
+          <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
+            <div>
+              <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
+              <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Customer &amp; Service Channels</h1>
+              <p class="mt-1 max-w-2xl text-sm text-muted">
+                A single view of every way customers reach you — from the front counter to fleet contracts —
+                with the metrics that matter for each.
+              </p>
+            </div>
+            <div id="user-badge" class="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 bg-white/5 px-3 py-1.5"></div>
+          </div>
+        </header>
+
+        <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
+          <div id="section-root" class="space-y-6"></div>
+        </main>
+
+        <div id="modal-root"></div>
+        <div id="booking-modal-root"></div>
       </div>
-    </header>
-
-    <main class="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
-      <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
-      <div id="filter-bar"></div>
-      <div id="channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>
-    </main>
-
-    <div id="modal-root"></div>
-    <div id="booking-modal-root"></div>
+    </div>
   </div>
 
   <div id="employee-root" class="hidden"></div>
@@ -239,7 +258,12 @@ const KPIS = [
 // State
 // ---------------------------------------------------------------------------
 
-const state = { timeframe: "today", serviceType: "all" };
+const state = { timeframe: "today", serviceType: "all", section: "overview" };
+
+const SECTIONS = [
+  { id: "overview", label: "Overview", icon: "layout-dashboard" },
+  { id: "services", label: "Services", icon: "wrench" },
+];
 
 function getFactor() {
   return TIMEFRAMES.find((t) => t.id === state.timeframe).factor;
@@ -305,6 +329,7 @@ const ACCOUNTS = {
 };
 const SESSION_KEY = "mrklin_session_v1";
 let loginRole = "admin";
+let currentRole = null;
 
 function loadSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
@@ -394,8 +419,35 @@ function renderUserBadge(role, elementId) {
     <button onclick="logout()" class="ml-2 rounded-lg border border-white/10 px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Log out</button>`;
 }
 
+function renderHeaderRolePill(role, elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const account = ACCOUNTS[role];
+  el.innerHTML = `
+    <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-amber"></span>
+    <span class="text-sm font-medium text-ink">${account ? account.label : role}</span>`;
+}
+
+function renderSidebarProfile(role, elementId) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const account = ACCOUNTS[role];
+  const label = account ? account.label : role;
+  const initials = label.slice(0, 2).toUpperCase();
+  el.innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-red/20 text-sm font-semibold text-brand-red">${initials}</div>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-semibold text-ink">${label}</p>
+        <p class="truncate text-xs text-muted">Signed in</p>
+      </div>
+    </div>
+    <button onclick="logout()" class="mt-3 w-full rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Log out</button>`;
+}
+
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
+  currentRole = role;
   if (role === "employee") {
     document.getElementById("app-root").classList.add("hidden");
     document.getElementById("employee-root").classList.remove("hidden");
@@ -403,7 +455,6 @@ function startApp(role) {
   } else {
     document.getElementById("employee-root").classList.add("hidden");
     document.getElementById("app-root").classList.remove("hidden");
-    renderUserBadge(role, "user-badge");
     renderAll();
   }
 }
@@ -538,26 +589,14 @@ function renderFilterBar() {
         <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
         <span class="text-sm font-medium">Filters</span>
       </div>
-      <div class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
-        <div class="flex items-center gap-2">
-          <i data-lucide="calendar-days" class="h-4 w-4 text-muted shrink-0"></i>
-          <div class="flex rounded-lg bg-white/5 p-1">
-            ${TIMEFRAMES.map((tf) => `
-              <button onclick="setTimeframe('${tf.id}')"
-                class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  state.timeframe === tf.id ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
-                }">${tf.label}</button>`).join("")}
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <i data-lucide="car" class="h-4 w-4 text-muted shrink-0"></i>
-          <div class="flex rounded-lg bg-white/5 p-1">
-            ${SERVICE_TYPES.map((st) => `
-              <button onclick="setServiceType('${st.id}')"
-                class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-                  state.serviceType === st.id ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
-                }">${st.label}</button>`).join("")}
-          </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="calendar-days" class="h-4 w-4 text-muted shrink-0"></i>
+        <div class="flex rounded-lg bg-white/5 p-1">
+          ${TIMEFRAMES.map((tf) => `
+            <button onclick="setTimeframe('${tf.id}')"
+              class="rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                state.timeframe === tf.id ? "bg-brand-red text-ink" : "text-muted hover:text-brand-amber"
+              }">${tf.label}</button>`).join("")}
         </div>
       </div>
     </div>`;
@@ -570,13 +609,12 @@ function renderChannelMetric(metric) {
 
 function renderChannels() {
   const el = document.getElementById("channels-grid");
-  el.innerHTML = CHANNELS.map((ch) => {
-    const dimmed = state.serviceType !== "all" && ch.serviceGroup !== state.serviceType;
-    const highlighted = state.serviceType !== "all" && ch.serviceGroup === state.serviceType;
-    return `
-      <div class="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-panel transition-all ${
-        dimmed ? "opacity-40 grayscale" : "opacity-100"
-      } ${highlighted ? "ring-2 ring-brand-amber/60" : ""}">
+  el.innerHTML = CHANNELS.map(renderChannelCard).join("");
+}
+
+function renderChannelCard(ch) {
+  return `
+      <div class="flex flex-col overflow-hidden rounded-xl border border-white/10 bg-panel">
         <button onclick="openModal('${ch.id}')" class="flex items-center gap-3 px-5 py-4 text-left bg-brand-red">
           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
             <i data-lucide="${ch.icon}" class="h-5 w-5 text-ink"></i>
@@ -624,7 +662,6 @@ function renderChannels() {
           </button>
         </div>
       </div>`;
-  }).join("");
 }
 
 let modalState = { channelId: null, feature: null, status: "Overview" };
@@ -710,6 +747,10 @@ function setTimeframe(id) {
 }
 function setServiceType(id) {
   state.serviceType = id;
+  renderAll();
+}
+function setSection(id) {
+  state.section = id;
   renderAll();
 }
 function openModal(channelId, feature) {
@@ -847,10 +888,94 @@ function submitBooking(event) {
   openModal("walkin");
 }
 
-function renderAll() {
+function countNewItems() {
+  return CHANNELS.reduce((sum, ch) => sum + getDisplayRecentItems(ch).filter((i) => i.status === "New").length, 0);
+}
+
+function renderSidebar() {
+  const el = document.getElementById("sidebar-nav");
+  if (!el) return;
+  const newCount = countNewItems();
+  el.innerHTML = SECTIONS.map((s) => {
+    const badge = s.id === "overview" ? newCount : 0;
+    const active = state.section === s.id;
+    return `
+    <button onclick="setSection('${s.id}')"
+      class="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+        active ? "bg-brand-red text-ink" : "text-muted hover:bg-white/5 hover:text-brand-amber"
+      }">
+      <i data-lucide="${s.icon}" class="h-4 w-4 shrink-0"></i>
+      <span class="flex-1 truncate">${s.label}</span>
+      ${badge > 0 ? `<span class="shrink-0 rounded-full ${active ? "bg-white/20 text-ink" : "bg-brand-red/20 text-brand-red"} px-2 py-0.5 text-[11px] font-semibold">${badge}</span>` : ""}
+    </button>`;
+  }).join("");
+}
+
+function renderOverviewSection() {
+  const root = document.getElementById("section-root");
+  root.innerHTML = `
+    <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+    <div id="filter-bar"></div>
+    <div id="channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>`;
   renderKPIs();
   renderFilterBar();
   renderChannels();
+}
+
+function renderServiceTypeCards() {
+  const el = document.getElementById("services-type-cards");
+  if (!el) return;
+  const icons = { all: "layout-grid", mobile: "car", inshop: "store" };
+  el.innerHTML = SERVICE_TYPES.map((st) => {
+    const count = st.id === "all" ? CHANNELS.length : CHANNELS.filter((c) => c.serviceGroup === st.id).length;
+    const active = state.serviceType === st.id;
+    return `
+      <button onclick="setServiceType('${st.id}')"
+        class="flex items-center gap-4 rounded-xl border p-4 text-left transition-colors ${
+          active ? "border-brand-amber bg-brand-amber/10" : "border-white/10 bg-panel hover:border-white/20"
+        }">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${active ? "bg-brand-amber/20" : "bg-white/10"}">
+          <i data-lucide="${icons[st.id]}" class="h-5 w-5 ${active ? "text-brand-amber" : "text-muted"}"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="font-heading text-base font-bold ${active ? "text-brand-amber" : "text-ink"}">${st.label}</p>
+          <p class="text-xs text-muted">${count} channel${count === 1 ? "" : "s"}</p>
+        </div>
+      </button>`;
+  }).join("");
+}
+
+function renderServiceChannelsGrid() {
+  const el = document.getElementById("services-channels-grid");
+  if (!el) return;
+  const filtered = state.serviceType === "all" ? CHANNELS : CHANNELS.filter((c) => c.serviceGroup === state.serviceType);
+  el.innerHTML = filtered.length
+    ? filtered.map(renderChannelCard).join("")
+    : `<div class="col-span-full rounded-xl border border-white/10 bg-panel p-6 text-center text-sm text-muted">No channels for this service type.</div>`;
+}
+
+function renderServicesSection() {
+  const root = document.getElementById("section-root");
+  root.innerHTML = `
+    <div>
+      <p class="font-heading text-xl font-bold text-ink">Services</p>
+      <p class="mt-1 text-sm text-muted">Browse channels by service type — Mobile detailing on the road, or In-Shop appointments at the counter.</p>
+      <div id="services-type-cards" class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3"></div>
+    </div>
+    <div id="services-channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>`;
+  renderServiceTypeCards();
+  renderServiceChannelsGrid();
+}
+
+function renderAll() {
+  renderSidebar();
+  renderSidebarProfile(currentRole, "sidebar-profile");
+  renderHeaderRolePill(currentRole, "user-badge");
+  if (state.section === "services") {
+    renderServicesSection();
+  } else {
+    renderOverviewSection();
+  }
   lucide.createIcons();
 }
 
