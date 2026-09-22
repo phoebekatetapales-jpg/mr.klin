@@ -346,17 +346,28 @@ function paidTransactions() {
 
 const state = { timeframe: "today", serviceType: "all", section: "overview", transactionFilter: "All" };
 
-const SECTIONS = [
+// Nav is role-scoped: Admin runs day-to-day operations (no revenue data or
+// account management); Owner sees everything, including Financials and
+// User Access; Employee gets just their booking queue.
+const ADMIN_SECTIONS = [
+  { id: "overview", label: "Overview", icon: "layout-dashboard" },
+  { id: "services", label: "Services", icon: "wrench" },
+];
+const OWNER_SECTIONS = [
   { id: "overview", label: "Overview", icon: "layout-dashboard" },
   { id: "services", label: "Services", icon: "wrench" },
   { id: "financials", label: "Financials", icon: "wallet" },
+  { id: "access", label: "User Access", icon: "shield" },
 ];
-
-// Employee accounts get a single-item nav — no Financials/Services, since
-// those carry revenue and channel-configuration data meant for admin/owner.
 const EMPLOYEE_SECTIONS = [
   { id: "bookings", label: "Bookings", icon: "clipboard-list" },
 ];
+
+function sectionsForRole(role) {
+  if (role === "owner") return OWNER_SECTIONS;
+  if (role === "employee") return EMPLOYEE_SECTIONS;
+  return ADMIN_SECTIONS;
+}
 
 // Sidebar UI state — desktop collapse persists across sessions, the mobile
 // drawer's open/closed state is session-only and lives outside `state` so it
@@ -592,13 +603,13 @@ function renderHeaderRolePill(role, elementId) {
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
   currentRole = role;
-  // Employee only has the Bookings section; admin/owner default back to
-  // Overview if the previous session (in this same browser tab) left
-  // state.section on "bookings", which isn't one of their nav items.
-  if (role === "employee") {
-    state.section = "bookings";
-  } else if (state.section === "bookings") {
-    state.section = "overview";
+  // Each role has its own nav; if the previous session (in this same
+  // browser tab) left state.section on something this role can't reach —
+  // e.g. an Admin inheriting "financials" left over from an Owner session —
+  // fall back to that role's first section instead.
+  const allowedSections = sectionsForRole(role).map((s) => s.id);
+  if (!allowedSections.includes(state.section)) {
+    state.section = allowedSections[0];
   }
   document.getElementById("app-root").classList.remove("hidden");
   renderAll();
@@ -1059,7 +1070,7 @@ function renderSidebar() {
   const centerItem = collapsed ? "lg:justify-center lg:px-0" : "";
 
   const overdueInvoiceCount = INVOICES.filter((i) => i.status === "Overdue").length;
-  const navSections = currentRole === "employee" ? EMPLOYEE_SECTIONS : SECTIONS;
+  const navSections = sectionsForRole(currentRole);
   const sectionsHtml = navSections.map((s) => {
     const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : 0;
     const active = state.section === s.id;
@@ -1406,6 +1417,59 @@ function renderPageHeader() {
        </p>`;
 }
 
+function accountAccessCard(role, accessDescription) {
+  const account = ACCOUNTS[role];
+  return `
+    <div class="flex flex-col gap-4 rounded-2xl border border-line/10 bg-panel p-5 shadow-lg shadow-black/20">
+      <div class="flex items-center gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red/15">
+          <i data-lucide="user" class="h-5 w-5 text-brand-red"></i>
+        </div>
+        <div class="min-w-0">
+          <p class="truncate font-heading text-base font-bold text-ink">${account.label}</p>
+          <p class="truncate text-xs text-muted">Access: ${accessDescription}</p>
+        </div>
+      </div>
+      <form onsubmit="updateAccountPassword(event, '${role}')" class="space-y-2">
+        <label class="block text-xs font-medium text-muted">Set new password</label>
+        <div class="flex gap-2">
+          <input type="password" id="access-password-${role}" placeholder="New password" minlength="4" required
+            class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none" />
+          <button type="submit" class="shrink-0 rounded-lg bg-brand-red px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-brand-amber hover:text-black">Update</button>
+        </div>
+        <p id="access-confirm-${role}" class="hidden text-xs text-brand-amber">Password updated for this session.</p>
+      </form>
+    </div>`;
+}
+
+function updateAccountPassword(event, role) {
+  event.preventDefault();
+  const input = document.getElementById(`access-password-${role}`);
+  ACCOUNTS[role].password = input.value;
+  input.value = "";
+  document.getElementById(`access-confirm-${role}`).classList.remove("hidden");
+}
+
+function renderAccessSection() {
+  const root = document.getElementById("section-root");
+  const roleAccess = {
+    admin: "Overview, Services",
+    owner: "Overview, Services, Financials, User Access",
+    employee: "Bookings",
+  };
+  root.innerHTML = `
+    <div>
+      <p class="font-heading text-xl font-bold text-ink">User Access</p>
+      <p class="mt-1 text-sm text-muted">Who can sign in, what each role reaches, and password resets — visible to Owner only.</p>
+    </div>
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+      ${Object.keys(ACCOUNTS).map((role) => accountAccessCard(role, roleAccess[role])).join("")}
+    </div>
+    <p class="rounded-2xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-lg shadow-black/20">
+      This is a front-end-only demo login gate — password changes here apply for the current browser session only and reset on reload. There's no backend, so this does not protect sensitive data.
+    </p>`;
+}
+
 function renderAll() {
   renderSidebar();
   renderHeaderRolePill(currentRole, "user-badge");
@@ -1415,8 +1479,10 @@ function renderAll() {
     renderBookingsSection();
   } else if (state.section === "services") {
     renderServicesSection();
-  } else if (state.section === "financials") {
+  } else if (state.section === "financials" && currentRole === "owner") {
     renderFinancialsSection();
+  } else if (state.section === "access" && currentRole === "owner") {
+    renderAccessSection();
   } else {
     renderOverviewSection();
   }
