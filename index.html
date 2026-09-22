@@ -89,6 +89,14 @@
               <div id="page-header-text"></div>
             </div>
             <div class="flex shrink-0 items-center gap-2 self-start">
+              <div id="notif-overlay" onclick="closeNotifications()" class="fixed inset-0 z-30 hidden"></div>
+              <div class="relative">
+                <button id="notif-toggle" onclick="toggleNotifications()" aria-label="Notifications" class="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line/10 bg-line/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber">
+                  <i data-lucide="bell" class="h-4 w-4"></i>
+                  <span id="notif-count" class="absolute -right-1 -top-1 hidden min-w-[18px] rounded-full bg-brand-red px-1 text-center text-[10px] font-semibold leading-[18px] text-white"></span>
+                </button>
+                <div id="notif-panel" class="absolute right-0 top-full z-40 mt-2 hidden w-80 max-w-[90vw] overflow-hidden rounded-2xl border border-line/10 bg-panel shadow-2xl shadow-black/50"></div>
+              </div>
               <button id="theme-toggle" onclick="toggleTheme()" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line/10 bg-line/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber"></button>
               <div id="user-badge" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-line/10 bg-line/5 px-3 py-1.5"></div>
             </div>
@@ -398,6 +406,96 @@ function renderThemeToggle() {
   lucide.createIcons();
 }
 
+// ---------------------------------------------------------------------------
+// Notifications — shared by Admin, Owner and Employee, scoped to whatever
+// pages that role currently has access to (see sectionsForRole), so a role
+// never gets notified about data it can't open.
+// ---------------------------------------------------------------------------
+
+let notificationsOpen = false;
+
+function buildNotifications() {
+  const sections = sectionsForRole(currentRole).map((s) => s.id);
+  const items = [];
+
+  if (sections.includes("overview") || sections.includes("services")) {
+    buildAttentionItems().forEach((r) => {
+      items.push({
+        icon: "circle-alert",
+        title: `${r.count} ${r.status.toLowerCase()} item${r.count === 1 ? "" : "s"} — ${r.channelName}`,
+        status: r.status,
+        onclick: `closeNotifications(); openModal('${r.channelId}', null, '${r.status}')`,
+      });
+    });
+  }
+
+  if (sections.includes("financials")) {
+    INVOICES.filter((i) => i.status === "Overdue").forEach((inv) => {
+      items.push({
+        icon: "receipt",
+        title: `${inv.account} — invoice ${inv.agingDays} day${inv.agingDays === 1 ? "" : "s"} overdue`,
+        status: "Overdue",
+        onclick: `closeNotifications(); setSection('financials')`,
+      });
+    });
+  }
+
+  if (sections.includes("bookings")) {
+    loadWalkinBookings().filter((b) => b.status && b.status !== "Completed").forEach((b) => {
+      items.push({
+        icon: "car",
+        title: `${b.vehicle || "Walk-in"} — ${b.service || "Service"}`,
+        status: b.status,
+        onclick: `closeNotifications()`,
+      });
+    });
+  }
+
+  return items;
+}
+
+function toggleNotifications() {
+  notificationsOpen = !notificationsOpen;
+  renderNotifPanel();
+}
+function closeNotifications() {
+  notificationsOpen = false;
+  renderNotifPanel();
+}
+
+function renderNotifBell() {
+  const badge = document.getElementById("notif-count");
+  if (!badge) return;
+  const count = buildNotifications().length;
+  badge.textContent = count > 9 ? "9+" : String(count);
+  badge.classList.toggle("hidden", count === 0);
+}
+
+function renderNotifPanel() {
+  const panel = document.getElementById("notif-panel");
+  const overlay = document.getElementById("notif-overlay");
+  if (!panel) return;
+  panel.classList.toggle("hidden", !notificationsOpen);
+  if (overlay) overlay.classList.toggle("hidden", !notificationsOpen);
+  if (!notificationsOpen) return;
+
+  const items = buildNotifications();
+  panel.innerHTML = `
+    <div class="flex items-center justify-between border-b border-line/10 px-4 py-3">
+      <p class="font-heading text-sm font-bold text-ink">Notifications</p>
+      ${items.length ? `<span class="text-xs text-muted">${items.length} item${items.length === 1 ? "" : "s"}</span>` : ""}
+    </div>
+    <div class="max-h-80 overflow-y-auto p-2">
+      ${items.length ? items.map((n) => `
+        <button onclick="${n.onclick}" class="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-line/5">
+          <i data-lucide="${n.icon}" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
+          <span class="min-w-0 flex-1 truncate text-sm text-ink">${n.title}</span>
+          <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[n.status] || "bg-line/10 text-muted"}">${n.status}</span>
+        </button>`).join("") : `<p class="px-3 py-6 text-center text-sm text-muted">You're all caught up.</p>`}
+    </div>`;
+  lucide.createIcons();
+}
+
 function toggleSidebarCollapse() {
   sidebarCollapsed = !sidebarCollapsed;
   localStorage.setItem(SIDEBAR_COLLAPSED_KEY, sidebarCollapsed ? "1" : "0");
@@ -603,6 +701,7 @@ function renderHeaderRolePill(role, elementId) {
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
   currentRole = role;
+  notificationsOpen = false;
   document.getElementById("app-root").classList.remove("hidden");
   renderAll();
 }
@@ -1527,6 +1626,8 @@ function renderAll() {
   renderSidebar();
   renderHeaderRolePill(currentRole, "user-badge");
   renderThemeToggle();
+  renderNotifBell();
+  renderNotifPanel();
   renderPageHeader();
   (SECTION_RENDERERS[state.section] || renderOverviewSection)();
   lucide.createIcons();
