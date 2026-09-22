@@ -10,10 +10,11 @@
     theme: {
       extend: {
         colors: {
-          base: "#121212",
-          panel: "#1A1B1E",
-          ink: "#F5F5F3",
-          muted: "#8A8D91",
+          base: "rgb(var(--color-base) / <alpha-value>)",
+          panel: "rgb(var(--color-panel) / <alpha-value>)",
+          ink: "rgb(var(--color-ink) / <alpha-value>)",
+          muted: "rgb(var(--color-muted) / <alpha-value>)",
+          line: "rgb(var(--color-line) / <alpha-value>)",
           brand: {
             red: "#E63946",
             amber: "#F2A93B",
@@ -34,22 +35,53 @@
 <style>
   .tabular-nums { font-variant-numeric: tabular-nums; }
   ::selection { background: #E63946; color: #F5F5F3; }
+
+  /* Dark is the default brand look; light overrides the same tokens so
+     every bg-base/panel/ink/muted/line/ class repaints without touching
+     markup. `line` stands in for the raw white/NN overlays borders and
+     hover states used before light mode existed — white-based in dark
+     mode (unchanged), black-based in light mode. */
+  :root {
+    --color-base: 18 18 18;
+    --color-panel: 26 27 30;
+    --color-ink: 245 245 243;
+    --color-muted: 138 141 145;
+    --color-line: 255 255 255;
+  }
+  :root[data-theme="light"] {
+    --color-base: 244 244 245;
+    --color-panel: 255 255 255;
+    --color-ink: 23 24 27;
+    --color-muted: 107 114 128;
+    --color-line: 0 0 0;
+  }
 </style>
 </head>
-<body class="min-h-screen bg-base font-sans text-ink antialiased pb-16">
+<body class="min-h-screen bg-base font-sans text-ink antialiased pb-16 transition-colors duration-200">
+<script>
+  // Applied before the app renders so login/app don't flash the wrong
+  // theme; the main script re-reads this same attribute at startup.
+  (function () {
+    try {
+      var saved = localStorage.getItem("mrklin_theme_v1");
+      var theme = saved || ((window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light");
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch (e) {}
+  })();
+</script>
 
   <div id="login-root"></div>
 
   <div id="app-root" class="hidden">
     <div id="sidebar-overlay" onclick="closeMobileSidebar()" class="fixed inset-0 z-30 hidden bg-black/60 backdrop-blur-sm lg:hidden"></div>
     <div class="flex min-h-screen">
-      <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:z-0 lg:h-screen lg:w-64 lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none"></aside>
+      <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 flex w-72 -translate-x-full flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:z-0 lg:h-screen lg:w-64 lg:translate-x-0 lg:border-r lg:border-line/10 lg:shadow-none"></aside>
 
       <div class="flex min-w-0 flex-1 flex-col">
-        <header class="sticky top-0 z-20 border-b border-white/10 bg-panel/95 backdrop-blur">
+        <header class="sticky top-0 z-20 border-b border-line/10 bg-panel/95 backdrop-blur">
           <div class="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
             <div class="flex items-start gap-3">
-              <button onclick="openMobileSidebar()" aria-label="Open menu" class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber lg:hidden">
+              <button onclick="openMobileSidebar()" aria-label="Open menu" class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line/10 bg-line/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber lg:hidden">
                 <i data-lucide="menu" class="h-4.5 w-4.5"></i>
               </button>
               <div>
@@ -61,7 +93,10 @@
                 </p>
               </div>
             </div>
-            <div id="user-badge" class="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/10 bg-white/5 px-3 py-1.5"></div>
+            <div class="flex shrink-0 items-center gap-2 self-start">
+              <button id="theme-toggle" onclick="toggleTheme()" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-line/10 bg-line/5 text-ink transition-colors hover:border-brand-amber/50 hover:text-brand-amber"></button>
+              <div id="user-badge" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-line/10 bg-line/5 px-3 py-1.5"></div>
+            </div>
           </div>
         </header>
 
@@ -227,17 +262,17 @@ const CHANNELS = [
 // per-status rainbow colors: red = needs attention, amber = positive/done,
 // neutral = informational.
 const STATUS_STYLES = {
-  New: "bg-white/10 text-muted", Booked: "bg-brand-amber/15 text-brand-amber",
-  Quoted: "bg-white/10 text-muted", "Follow-up": "bg-white/10 text-muted",
-  Closed: "bg-white/10 text-muted", "In progress": "bg-white/10 text-muted",
-  "En route": "bg-white/10 text-muted", Completed: "bg-brand-amber/15 text-brand-amber",
+  New: "bg-line/10 text-muted", Booked: "bg-brand-amber/15 text-brand-amber",
+  Quoted: "bg-line/10 text-muted", "Follow-up": "bg-line/10 text-muted",
+  Closed: "bg-line/10 text-muted", "In progress": "bg-line/10 text-muted",
+  "En route": "bg-line/10 text-muted", Completed: "bg-brand-amber/15 text-brand-amber",
   Delayed: "bg-brand-red/15 text-brand-red", Abandoned: "bg-brand-red/15 text-brand-red",
   Redeemed: "bg-brand-amber/15 text-brand-amber", Upgraded: "bg-brand-amber/15 text-brand-amber",
-  Viewed: "bg-white/10 text-muted", Credited: "bg-brand-amber/15 text-brand-amber",
-  Scheduled: "bg-white/10 text-muted", Sent: "bg-white/10 text-muted",
+  Viewed: "bg-line/10 text-muted", Credited: "bg-brand-amber/15 text-brand-amber",
+  Scheduled: "bg-line/10 text-muted", Sent: "bg-line/10 text-muted",
   Overdue: "bg-brand-red/15 text-brand-red", Onboarded: "bg-brand-amber/15 text-brand-amber",
-  Paid: "bg-brand-amber/15 text-brand-amber", Pending: "bg-white/10 text-muted",
-  Refunded: "bg-white/10 text-muted",
+  Paid: "bg-brand-amber/15 text-brand-amber", Pending: "bg-line/10 text-muted",
+  Refunded: "bg-line/10 text-muted",
 };
 
 const KPIS = [
@@ -330,6 +365,31 @@ const SECTIONS = [
 const SIDEBAR_COLLAPSED_KEY = "mrklin_sidebar_collapsed_v1";
 let sidebarCollapsed = localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
 let mobileSidebarOpen = false;
+
+// Theme state — the inline script in <head> already set data-theme before
+// this script ran (avoids a flash of the wrong theme), so this just reads
+// that same attribute back rather than re-deciding it.
+const THEME_KEY = "mrklin_theme_v1";
+let currentTheme = document.documentElement.getAttribute("data-theme") || "dark";
+
+function applyTheme() {
+  document.documentElement.setAttribute("data-theme", currentTheme);
+  try { localStorage.setItem(THEME_KEY, currentTheme); } catch (e) {}
+}
+function toggleTheme() {
+  currentTheme = currentTheme === "dark" ? "light" : "dark";
+  applyTheme();
+  renderThemeToggle();
+}
+function renderThemeToggle() {
+  const el = document.getElementById("theme-toggle");
+  if (!el) return;
+  const isDark = currentTheme === "dark";
+  el.innerHTML = `<i data-lucide="${isDark ? "moon" : "sun"}" class="h-4 w-4"></i>`;
+  el.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+  el.title = isDark ? "Light mode" : "Dark mode";
+  lucide.createIcons();
+}
 
 function toggleSidebarCollapse() {
   sidebarCollapsed = !sidebarCollapsed;
@@ -456,7 +516,7 @@ function renderLogin() {
   const root = document.getElementById("login-root");
   root.innerHTML = `
     <div class="fixed inset-0 z-[100] flex items-center justify-center bg-base p-4">
-      <div class="w-full max-w-sm rounded-2xl border border-white/10 bg-panel p-6 shadow-2xl shadow-black/50">
+      <div class="w-full max-w-sm rounded-2xl border border-line/10 bg-panel p-6 shadow-2xl shadow-black/50">
         <div class="mb-6 text-center">
           <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
           <h1 class="mt-1 font-heading text-xl font-bold text-ink">Sign in</h1>
@@ -464,7 +524,7 @@ function renderLogin() {
         <form onsubmit="attemptLogin(event)" class="space-y-4">
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Role</label>
-            <div class="flex rounded-lg bg-white/5 p-1">
+            <div class="flex rounded-lg bg-line/5 p-1">
               <button type="button" id="role-btn-admin" onclick="setLoginRole('admin')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Admin</button>
               <button type="button" id="role-btn-owner" onclick="setLoginRole('owner')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Owner</button>
               <button type="button" id="role-btn-employee" onclick="setLoginRole('employee')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Employee</button>
@@ -473,7 +533,7 @@ function renderLogin() {
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Password</label>
             <input required id="login-password" type="password" autofocus
-              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
               placeholder="Enter password" />
           </div>
           <p id="login-error" class="hidden text-xs text-brand-red"></p>
@@ -511,7 +571,7 @@ function renderUserBadge(role, elementId) {
   el.innerHTML = `
     <span class="text-xs text-muted">Signed in as</span>
     <span class="text-sm font-semibold text-ink">${account ? account.label : role}</span>
-    <button onclick="logout()" class="ml-2 rounded-lg border border-white/10 px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Log out</button>`;
+    <button onclick="logout()" class="ml-2 rounded-lg border border-line/10 px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Log out</button>`;
 }
 
 function renderHeaderRolePill(role, elementId) {
@@ -549,14 +609,14 @@ function renderEmployeeView(role) {
 
   root.innerHTML = `
     <div class="min-h-screen bg-base">
-      <header class="border-b border-white/10 bg-panel">
+      <header class="border-b border-line/10 bg-panel">
         <div class="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-6 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-8">
           <div>
             <p class="text-xs font-medium uppercase tracking-wide text-muted">MR. Klin Trading Services Corporation</p>
             <h1 class="mt-1 font-heading text-2xl font-bold tracking-tight text-ink sm:text-3xl">Employee View</h1>
             <p class="mt-1 max-w-2xl text-sm text-muted">Booking counts and vehicle details for walk-in customers.</p>
           </div>
-          <div id="employee-user-badge" class="flex shrink-0 items-center gap-2 self-start rounded-lg border border-white/10 bg-white/5 px-3 py-2"></div>
+          <div id="employee-user-badge" class="flex shrink-0 items-center gap-2 self-start rounded-lg border border-line/10 bg-line/5 px-3 py-2"></div>
         </div>
       </header>
       <main class="mx-auto max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -564,7 +624,7 @@ function renderEmployeeView(role) {
           <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Number of bookings by channel</p>
           <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
             ${bookingCounts.map((c) => `
-              <div class="rounded-xl border border-white/10 bg-panel p-4">
+              <div class="rounded-xl border border-line/10 bg-panel p-4">
                 <p class="truncate text-sm text-muted">${c.name}</p>
                 <p class="font-heading text-2xl font-bold text-ink tabular-nums">${c.count}</p>
               </div>`).join("")}
@@ -576,10 +636,10 @@ function renderEmployeeView(role) {
         </div>
         <div>
           <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Unit (vehicle) information — walk-in bookings</p>
-          <div class="overflow-x-auto rounded-xl border border-white/10 bg-panel">
+          <div class="overflow-x-auto rounded-xl border border-line/10 bg-panel">
             <table class="w-full text-left text-sm">
               <thead>
-                <tr class="border-b border-white/10 text-xs uppercase tracking-wide text-muted">
+                <tr class="border-b border-line/10 text-xs uppercase tracking-wide text-muted">
                   <th class="whitespace-nowrap px-4 py-3">Owner</th>
                   <th class="whitespace-nowrap px-4 py-3">Phone</th>
                   <th class="whitespace-nowrap px-4 py-3">Vehicle</th>
@@ -593,7 +653,7 @@ function renderEmployeeView(role) {
               </thead>
               <tbody>
                 ${vehicles.length ? vehicles.map((v) => `
-                  <tr class="border-b border-white/5 last:border-0">
+                  <tr class="border-b border-line/5 last:border-0">
                     <td class="whitespace-nowrap px-4 py-3 text-ink">${v.ownerName || "—"}</td>
                     <td class="whitespace-nowrap px-4 py-3 text-muted">${v.phone || "—"}</td>
                     <td class="whitespace-nowrap px-4 py-3 text-ink">${v.vehicle || "—"}</td>
@@ -602,7 +662,7 @@ function renderEmployeeView(role) {
                     <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
                     <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
                     <td class="whitespace-nowrap px-4 py-3">
-                      <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-white/10 text-muted"}">${v.status || "Booked"}</span>
+                      <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-line/10 text-muted"}">${v.status || "Booked"}</span>
                     </td>
                     <td class="whitespace-nowrap px-4 py-3">
                       ${v.status === "Completed"
@@ -645,7 +705,7 @@ function bootstrap() {
 
 function statCard(label, value, sub) {
   return `
-    <div class="rounded-2xl border border-white/10 bg-panel p-4 shadow-lg shadow-black/20 transition-colors hover:border-white/20">
+    <div class="rounded-2xl border border-line/10 bg-panel p-4 shadow-lg shadow-black/20 transition-colors hover:border-line/20">
       <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-muted">${label}</p>
       <p class="mt-1.5 font-heading text-2xl font-bold text-ink tabular-nums">${value}</p>
       <p class="mt-1 truncate text-xs text-muted">${sub}</p>
@@ -663,14 +723,14 @@ function renderKPIs() {
 function renderFilterBar() {
   const el = document.getElementById("filter-bar");
   el.innerHTML = `
-    <div class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-panel px-4 py-3 shadow-lg shadow-black/20 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex flex-col gap-3 rounded-2xl border border-line/10 bg-panel px-4 py-3 shadow-lg shadow-black/20 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-2 text-muted">
         <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
         <span class="text-sm font-medium">Filters</span>
       </div>
       <div class="flex items-center gap-2">
         <i data-lucide="calendar-days" class="h-4 w-4 text-muted shrink-0"></i>
-        <div class="flex rounded-xl bg-white/5 p-1">
+        <div class="flex rounded-xl bg-line/5 p-1">
           ${TIMEFRAMES.map((tf) => `
             <button onclick="setTimeframe('${tf.id}')"
               class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
@@ -693,7 +753,7 @@ function renderChannels() {
 
 function renderChannelCard(ch) {
   return `
-      <div class="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-panel shadow-lg shadow-black/20 transition-colors hover:border-white/20">
+      <div class="flex flex-col overflow-hidden rounded-2xl border border-line/10 bg-panel shadow-lg shadow-black/20 transition-colors hover:border-line/20">
         <button onclick="openModal('${ch.id}')" class="flex items-center gap-3 bg-gradient-to-r from-brand-red to-brand-red/80 px-5 py-4 text-left">
           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
             <i data-lucide="${ch.icon}" class="h-5 w-5 text-ink"></i>
@@ -711,14 +771,14 @@ function renderChannelCard(ch) {
               ${ch.features.map((f) => `
                 <li>
                   <button onclick="openModal('${ch.id}', '${f.replace(/'/g, "\\'")}')"
-                    class="group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-muted transition-colors hover:bg-white/5">
+                    class="group flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm text-muted transition-colors hover:bg-line/5">
                     <i data-lucide="circle-dot" class="h-3.5 w-3.5 shrink-0 text-brand-amber"></i>
                     <span class="flex-1 truncate group-hover:text-brand-amber">${f}</span>
                   </button>
                 </li>`).join("")}
             </ul>
           </div>
-          <div class="mt-auto rounded-xl bg-white/5 p-3.5">
+          <div class="mt-auto rounded-xl bg-line/5 p-3.5">
             <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">Key metrics</p>
             <div class="space-y-2">
               ${ch.metrics.map((m) => `
@@ -756,7 +816,7 @@ function renderModal() {
 
   root.innerHTML = `
     <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onclick="closeModal()">
-      <div class="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-panel shadow-2xl shadow-black/50 sm:max-w-2xl sm:rounded-2xl" onclick="event.stopPropagation()">
+      <div class="flex max-h-[85vh] w-full flex-col overflow-hidden rounded-t-2xl border border-line/10 bg-panel shadow-2xl shadow-black/50 sm:max-w-2xl sm:rounded-2xl" onclick="event.stopPropagation()">
         <div class="flex items-center gap-3 bg-gradient-to-r from-brand-red to-brand-red/80 px-5 py-4">
           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
             <i data-lucide="${ch.icon}" class="h-5 w-5 text-ink"></i>
@@ -770,13 +830,13 @@ function renderModal() {
           </button>
         </div>
         <div class="flex flex-1 flex-col overflow-hidden sm:flex-row">
-          <div class="flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 p-3 sm:w-40 sm:flex-col sm:overflow-y-auto sm:border-b-0 sm:border-r sm:p-3">
+          <div class="flex shrink-0 gap-2 overflow-x-auto border-b border-line/10 p-3 sm:w-40 sm:flex-col sm:overflow-y-auto sm:border-b-0 sm:border-r sm:p-3">
             ${statuses.map((s) => {
               const count = s === "Overview" ? items.length : items.filter((i) => i.status === s).length;
               return `
               <button onclick="setModalStatusFilter('${s.replace(/'/g, "\\'")}')"
                 class="flex shrink-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors ${
-                  status === s ? "bg-brand-red text-ink" : "text-muted hover:bg-white/5 hover:text-brand-amber"
+                  status === s ? "bg-brand-red text-ink" : "text-muted hover:bg-line/5 hover:text-brand-amber"
                 }">
                 <span class="truncate">${s}</span>
                 <span class="shrink-0 text-[11px] opacity-75">${count}</span>
@@ -786,7 +846,7 @@ function renderModal() {
           <div class="flex-1 overflow-y-auto p-5">
             <div class="mb-4 grid grid-cols-3 gap-2">
               ${ch.metrics.map((m) => `
-                <div class="rounded-xl bg-white/5 p-2.5 text-center">
+                <div class="rounded-xl bg-line/5 p-2.5 text-center">
                   <p class="text-sm font-semibold text-brand-amber">${fmt(m.value)}${typeof m.value === "number" ? m.unit : ""}</p>
                   <p class="mt-0.5 text-[11px] leading-tight text-muted">${m.label}</p>
                 </div>`).join("")}
@@ -794,12 +854,12 @@ function renderModal() {
             <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted">${ch.recentLabel}${status !== "Overview" ? ` — ${status}` : ""}</p>
             <ul class="space-y-2">
               ${filteredItems.length ? filteredItems.map((item) => `
-                <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3 transition-colors hover:border-white/20">
+                <li class="flex items-start gap-3 rounded-xl border border-line/10 p-3 transition-colors hover:border-line/20">
                   <i data-lucide="file-text" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-start justify-between gap-2">
                       <p class="text-sm font-medium text-ink">${item.title}</p>
-                      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-white/10 text-muted"}">${item.status}</span>
+                      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-line/10 text-muted"}">${item.status}</span>
                     </div>
                     <p class="mt-0.5 text-xs text-muted">${item.sub}</p>
                     <div class="mt-1 flex items-center gap-1 text-[11px] text-muted">
@@ -807,7 +867,7 @@ function renderModal() {
                       ${item.time}
                     </div>
                   </div>
-                </li>`).join("") : `<li class="rounded-lg border border-white/10 p-4 text-center text-sm text-muted">No items with this status.</li>`}
+                </li>`).join("") : `<li class="rounded-lg border border-line/10 p-4 text-center text-sm text-muted">No items with this status.</li>`}
             </ul>
           </div>
         </div>
@@ -850,7 +910,7 @@ function openBookingForm() {
   const root = document.getElementById("booking-modal-root");
   root.innerHTML = `
     <div class="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4" onclick="closeBookingForm()">
-      <div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl border border-white/10 bg-panel shadow-2xl shadow-black/50 sm:max-w-lg sm:rounded-2xl" onclick="event.stopPropagation()">
+      <div class="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-2xl border border-line/10 bg-panel shadow-2xl shadow-black/50 sm:max-w-lg sm:rounded-2xl" onclick="event.stopPropagation()">
         <div class="flex items-center gap-3 px-5 py-4 bg-brand-red">
           <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/15">
             <i data-lucide="clipboard-list" class="h-5 w-5 text-ink"></i>
@@ -867,43 +927,43 @@ function openBookingForm() {
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Owner name *</label>
             <input required id="bf-owner" type="text" oninput="previewVisit()"
-              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
               placeholder="e.g. Maria Santos" />
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Phone number *</label>
             <input required id="bf-phone" type="tel" oninput="previewVisit()"
-              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
               placeholder="09xx xxx xxxx" />
           </div>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="mb-1 block text-xs font-medium text-muted">Vehicle make/model *</label>
               <input required id="bf-vehicle" type="text"
-                class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+                class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
                 placeholder="e.g. Toyota Vios" />
             </div>
             <div>
               <label class="mb-1 block text-xs font-medium text-muted">Plate number</label>
               <input id="bf-plate" type="text"
-                class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+                class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
                 placeholder="ABC 1234" />
             </div>
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Service</label>
-            <select id="bf-service" style="background-color:#1A1B1E; color:#F5F5F3;"
-              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink focus:border-brand-amber focus:outline-none">
-              ${channel.features.map((f) => `<option value="${f}" style="background-color:#1A1B1E; color:#F5F5F3;">${f}</option>`).join("")}
+            <select id="bf-service" style="background-color:rgb(var(--color-panel)); color:rgb(var(--color-ink));"
+              class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink focus:border-brand-amber focus:outline-none">
+              ${channel.features.map((f) => `<option value="${f}" style="background-color:rgb(var(--color-panel)); color:rgb(var(--color-ink));">${f}</option>`).join("")}
             </select>
           </div>
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Notes</label>
             <textarea id="bf-notes" rows="2"
-              class="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
+              class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-amber focus:outline-none"
               placeholder="Optional notes"></textarea>
           </div>
-          <div id="bf-visit-preview" class="rounded-lg bg-white/5 p-3 text-xs text-muted"></div>
+          <div id="bf-visit-preview" class="rounded-lg bg-line/5 p-3 text-xs text-muted"></div>
           <div class="flex justify-end gap-2 pt-2">
             <button type="button" onclick="closeBookingForm()" class="rounded-lg px-3 py-2 text-sm font-medium text-muted hover:text-ink">Cancel</button>
             <button type="submit" class="rounded-lg bg-brand-red px-4 py-2 text-sm font-medium text-ink hover:bg-brand-amber hover:text-base transition-colors">Save booking</button>
@@ -998,7 +1058,7 @@ function renderSidebar() {
   const widthClasses = collapsed ? "lg:w-20" : "lg:w-64";
   sidebar.className = `fixed inset-y-0 left-0 z-40 flex w-72 ${
     mobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
-  } flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:z-0 lg:h-screen ${widthClasses} lg:translate-x-0 lg:border-r lg:border-white/10 lg:shadow-none`;
+  } flex-col bg-panel shadow-2xl shadow-black/50 transition-all duration-200 ease-in-out lg:sticky lg:top-0 lg:z-0 lg:h-screen ${widthClasses} lg:translate-x-0 lg:border-r lg:border-line/10 lg:shadow-none`;
 
   const newCount = countNewItems();
   const hideLabel = collapsed ? "lg:hidden" : "";
@@ -1011,7 +1071,7 @@ function renderSidebar() {
     return `
     <button onclick="handleSectionNavClick('${s.id}')" title="${s.label}"
       class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
-        active ? "bg-brand-red text-ink" : "text-muted hover:bg-white/5 hover:text-brand-amber"
+        active ? "bg-brand-red text-ink" : "text-muted hover:bg-line/5 hover:text-brand-amber"
       } ${centerItem}">
       <i data-lucide="${s.icon}" class="h-4 w-4 shrink-0"></i>
       <span class="flex-1 truncate ${hideLabel}">${s.label}</span>
@@ -1023,7 +1083,7 @@ function renderSidebar() {
     const newInChannel = getDisplayRecentItems(ch).filter((i) => i.status === "New").length;
     return `
     <button onclick="handleChannelNavClick('${ch.id}')" title="${ch.name}"
-      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-muted transition-colors hover:bg-white/5 hover:text-brand-amber ${centerItem}">
+      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-muted transition-colors hover:bg-line/5 hover:text-brand-amber ${centerItem}">
       <i data-lucide="${ch.icon}" class="h-4 w-4 shrink-0"></i>
       <span class="flex-1 truncate ${hideLabel}">${ch.name}</span>
       ${newInChannel > 0 ? `<span class="shrink-0 rounded-full bg-brand-amber/15 px-2 py-0.5 text-[11px] font-semibold text-brand-amber ${hideLabel}">${newInChannel}</span>` : ""}
@@ -1035,7 +1095,7 @@ function renderSidebar() {
   const initials = (label || "?").slice(0, 2).toUpperCase();
 
   sidebar.innerHTML = `
-    <div class="flex items-center gap-3 border-b border-white/10 px-4 py-4 ${collapsed ? "lg:justify-center lg:px-2" : ""}">
+    <div class="flex items-center gap-3 border-b border-line/10 px-4 py-4 ${collapsed ? "lg:justify-center lg:px-2" : ""}">
       <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-red">
         <i data-lucide="spray-can" class="h-4.5 w-4.5 text-ink"></i>
       </div>
@@ -1043,7 +1103,7 @@ function renderSidebar() {
         <p class="truncate text-[11px] font-medium uppercase tracking-wide text-muted">MR. Klin</p>
         <p class="truncate font-heading text-sm font-bold text-ink">Trading Services Corp.</p>
       </div>
-      <button onclick="closeMobileSidebar()" aria-label="Close menu" class="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-white/5 hover:text-ink lg:hidden">
+      <button onclick="closeMobileSidebar()" aria-label="Close menu" class="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-line/5 hover:text-ink lg:hidden">
         <i data-lucide="x" class="h-4 w-4"></i>
       </button>
     </div>
@@ -1057,12 +1117,12 @@ function renderSidebar() {
     </div>
 
     <button onclick="toggleSidebarCollapse()" title="${collapsed ? "Expand sidebar" : "Collapse sidebar"}"
-      class="hidden items-center justify-center gap-2 border-t border-white/10 px-3 py-3 text-xs font-medium text-muted transition-colors hover:text-brand-amber lg:flex">
+      class="hidden items-center justify-center gap-2 border-t border-line/10 px-3 py-3 text-xs font-medium text-muted transition-colors hover:text-brand-amber lg:flex">
       <i data-lucide="${collapsed ? "panel-left-open" : "panel-left-close"}" class="h-4 w-4 shrink-0"></i>
       <span class="${hideLabel}">Collapse</span>
     </button>
 
-    <div class="border-t border-white/10 p-4 ${collapsed ? "lg:px-2" : ""}">
+    <div class="border-t border-line/10 p-4 ${collapsed ? "lg:px-2" : ""}">
       <div class="flex items-center gap-3 ${collapsed ? "lg:justify-center" : ""}">
         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-red/20 text-sm font-semibold text-brand-red">${initials}</div>
         <div class="min-w-0 flex-1 ${hideLabel}">
@@ -1071,7 +1131,7 @@ function renderSidebar() {
         </div>
       </div>
       <button onclick="logout()" title="Log out"
-        class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">
+        class="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">
         <i data-lucide="log-out" class="h-3.5 w-3.5 shrink-0"></i>
         <span class="${hideLabel}">Log out</span>
       </button>
@@ -1082,8 +1142,8 @@ function renderSidebar() {
 
 function overviewCard(title, bodyHtml, actionHtml) {
   return `
-    <div class="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-panel shadow-lg shadow-black/20">
-      <div class="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+    <div class="flex flex-col overflow-hidden rounded-2xl border border-line/10 bg-panel shadow-lg shadow-black/20">
+      <div class="flex items-center justify-between gap-3 border-b border-line/10 px-5 py-4">
         <p class="font-heading text-base font-bold text-ink">${title}</p>
         ${actionHtml || ""}
       </div>
@@ -1094,13 +1154,13 @@ function overviewCard(title, bodyHtml, actionHtml) {
 function renderAttentionList() {
   const rows = buildAttentionItems();
   if (!rows.length) {
-    return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">All caught up — nothing needs attention right now.</p>`;
+    return `<p class="rounded-xl border border-line/10 bg-line/5 p-4 text-center text-sm text-muted">All caught up — nothing needs attention right now.</p>`;
   }
   return `<ul class="space-y-2">` + rows.map((r) => `
-    <li class="flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2.5 transition-colors hover:border-white/20">
+    <li class="flex items-center gap-3 rounded-xl border border-line/10 px-3 py-2.5 transition-colors hover:border-line/20">
       <span class="min-w-0 flex-1 truncate text-sm text-ink">${r.count} ${r.status.toLowerCase()} item${r.count === 1 ? "" : "s"} <span class="text-muted">— ${r.channelName}</span></span>
-      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[r.status] || "bg-white/10 text-muted"}">${r.status}</span>
-      <button onclick="openModal('${r.channelId}', null, '${r.status}')" class="shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-brand-amber hover:text-brand-amber">Open</button>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[r.status] || "bg-line/10 text-muted"}">${r.status}</span>
+      <button onclick="openModal('${r.channelId}', null, '${r.status}')" class="shrink-0 rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-brand-amber hover:text-brand-amber">Open</button>
     </li>`).join("") + `</ul>`;
 }
 
@@ -1112,7 +1172,7 @@ function barTrendHtml(data, caption) {
         return `
         <div class="flex flex-1 flex-col items-center gap-2">
           <div class="flex w-full flex-1 items-end">
-            <div class="w-full rounded-t-md ${isCurrent ? "bg-brand-red" : "bg-white/10"}" style="height:${h.pct}%"></div>
+            <div class="w-full rounded-t-md ${isCurrent ? "bg-brand-red" : "bg-line/10"}" style="height:${h.pct}%"></div>
           </div>
           <span class="text-[11px] font-medium ${isCurrent ? "text-brand-amber" : "text-muted"}">${h.m}</span>
         </div>`;
@@ -1127,13 +1187,13 @@ function renderLatestActivityList() {
     return items.length ? { ch, item: items[0] } : null;
   }).filter(Boolean).slice(0, 4);
   return `<ul class="space-y-2">` + rows.map(({ ch, item }) => `
-    <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3">
+    <li class="flex items-start gap-3 rounded-xl border border-line/10 p-3">
       <i data-lucide="${ch.icon}" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-medium text-ink">${item.title}</p>
         <p class="mt-0.5 truncate text-xs text-muted">${item.sub}</p>
       </div>
-      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-white/10 text-muted"}">${item.status}</span>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-line/10 text-muted"}">${item.status}</span>
     </li>`).join("") + `</ul>`;
 }
 
@@ -1141,13 +1201,13 @@ function renderFleetStatusList() {
   const mobile = CHANNELS.find((c) => c.id === "mobile");
   const items = getDisplayRecentItems(mobile).slice(0, 4);
   return `<ul class="space-y-2">` + items.map((item) => `
-    <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3">
+    <li class="flex items-start gap-3 rounded-xl border border-line/10 p-3">
       <i data-lucide="truck" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-medium text-ink">${item.title}</p>
         <p class="mt-0.5 truncate text-xs text-muted">${item.time}</p>
       </div>
-      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-white/10 text-muted"}">${item.status}</span>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-line/10 text-muted"}">${item.status}</span>
     </li>`).join("") + `</ul>`;
 }
 
@@ -1164,8 +1224,8 @@ function renderOverviewSection() {
       ${overviewCard("Inquiry trend, last six months", barTrendHtml(INQUIRY_TREND, "Inquiry volume relative to this month's peak — updates as new channels report in."))}
     </div>
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-      ${overviewCard("Latest activity", renderLatestActivityList(), `<button onclick="setSection('services')" class="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Open all</button>`)}
-      ${overviewCard("Mobile fleet status", renderFleetStatusList(), `<button onclick="openModal('mobile')" class="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Manage</button>`)}
+      ${overviewCard("Latest activity", renderLatestActivityList(), `<button onclick="setSection('services')" class="rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Open all</button>`)}
+      ${overviewCard("Mobile fleet status", renderFleetStatusList(), `<button onclick="openModal('mobile')" class="rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Manage</button>`)}
     </div>
     <div id="filter-bar"></div>
     <div id="channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>`;
@@ -1182,14 +1242,14 @@ function renderRevenueByChannel() {
     return { ch, amount, pct: Math.round((amount / total) * 100) };
   }).filter((r) => r.amount > 0).sort((a, b) => b.amount - a.amount);
 
-  if (!rows.length) return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">No paid transactions yet.</p>`;
+  if (!rows.length) return `<p class="rounded-xl border border-line/10 bg-line/5 p-4 text-center text-sm text-muted">No paid transactions yet.</p>`;
   return `<ul class="space-y-3">` + rows.map((r) => `
     <li>
       <div class="mb-1 flex items-center justify-between gap-2 text-sm">
         <span class="flex items-center gap-2 text-ink"><i data-lucide="${r.ch.icon}" class="h-3.5 w-3.5 shrink-0 text-brand-amber"></i><span class="truncate">${r.ch.name}</span></span>
         <span class="shrink-0 font-semibold tabular-nums text-ink">${peso(r.amount)}</span>
       </div>
-      <div class="h-2 w-full overflow-hidden rounded-full bg-white/10">
+      <div class="h-2 w-full overflow-hidden rounded-full bg-line/10">
         <div class="h-full rounded-full bg-brand-red" style="width:${r.pct}%"></div>
       </div>
     </li>`).join("") + `</ul>`;
@@ -1205,17 +1265,17 @@ function renderTransactionFilterRow() {
   return `<div class="mb-3 flex flex-wrap gap-2">` + filters.map((f) => `
     <button onclick="setTransactionFilter('${f}')"
       class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
-        state.transactionFilter === f ? "bg-brand-red text-ink" : "bg-white/5 text-muted hover:text-brand-amber"
+        state.transactionFilter === f ? "bg-brand-red text-ink" : "bg-line/5 text-muted hover:text-brand-amber"
       }">${f}</button>`).join("") + `</div>`;
 }
 
 function renderTransactionsList() {
   const filtered = state.transactionFilter === "All" ? TRANSACTIONS : TRANSACTIONS.filter((t) => t.status === state.transactionFilter);
-  if (!filtered.length) return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">No transactions with this status.</p>`;
+  if (!filtered.length) return `<p class="rounded-xl border border-line/10 bg-line/5 p-4 text-center text-sm text-muted">No transactions with this status.</p>`;
   return `<ul class="space-y-2">` + filtered.map((t) => {
     const ch = CHANNELS.find((c) => c.id === t.channelId);
     return `
-    <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3">
+    <li class="flex items-start gap-3 rounded-xl border border-line/10 p-3">
       <i data-lucide="${ch.icon}" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-medium text-ink">${t.service}</p>
@@ -1227,7 +1287,7 @@ function renderTransactionsList() {
       </div>
       <div class="flex shrink-0 flex-col items-end gap-1">
         <span class="text-sm font-semibold tabular-nums text-ink">${peso(t.amount)}</span>
-        <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[t.status] || "bg-white/10 text-muted"}">${t.status}</span>
+        <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[t.status] || "bg-line/10 text-muted"}">${t.status}</span>
       </div>
     </li>`;
   }).join("") + `</ul>`;
@@ -1241,15 +1301,15 @@ function markInvoicePaid(id) {
 }
 
 function renderInvoicesList() {
-  if (!INVOICES.length) return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">No outstanding invoices.</p>`;
+  if (!INVOICES.length) return `<p class="rounded-xl border border-line/10 bg-line/5 p-4 text-center text-sm text-muted">No outstanding invoices.</p>`;
   return `<ul class="space-y-2">` + INVOICES.map((inv) => `
-    <li class="flex items-center gap-3 rounded-xl border border-white/10 p-3">
+    <li class="flex items-center gap-3 rounded-xl border border-line/10 p-3">
       <div class="min-w-0 flex-1">
         <p class="truncate text-sm font-medium text-ink">${inv.account}</p>
         <p class="mt-0.5 text-xs text-muted">${inv.status === "Overdue" ? inv.agingDays + " day(s) overdue" : inv.agingDays === 0 ? "Sent today" : "Sent " + inv.agingDays + " day(s) ago"}</p>
       </div>
       <span class="shrink-0 text-sm font-semibold tabular-nums text-ink">${peso(inv.amount)}</span>
-      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[inv.status] || "bg-white/10 text-muted"}">${inv.status}</span>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[inv.status] || "bg-line/10 text-muted"}">${inv.status}</span>
       ${inv.status !== "Paid"
         ? `<button onclick="markInvoicePaid('${inv.id}')" class="shrink-0 rounded-lg border border-brand-amber/40 px-3 py-1.5 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark paid</button>`
         : `<span class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-brand-amber"><i data-lucide="check" class="h-3.5 w-3.5"></i>Paid</span>`}
@@ -1301,9 +1361,9 @@ function renderServiceTypeCards() {
     return `
       <button onclick="setServiceType('${st.id}')"
         class="flex items-center gap-4 rounded-2xl border p-4 text-left shadow-lg shadow-black/20 transition-colors ${
-          active ? "border-brand-amber bg-brand-amber/10" : "border-white/10 bg-panel hover:border-white/20"
+          active ? "border-brand-amber bg-brand-amber/10" : "border-line/10 bg-panel hover:border-line/20"
         }">
-        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${active ? "bg-brand-amber/20" : "bg-white/10"}">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${active ? "bg-brand-amber/20" : "bg-line/10"}">
           <i data-lucide="${icons[st.id]}" class="h-5 w-5 ${active ? "text-brand-amber" : "text-muted"}"></i>
         </div>
         <div class="min-w-0">
@@ -1320,7 +1380,7 @@ function renderServiceChannelsGrid() {
   const filtered = state.serviceType === "all" ? CHANNELS : CHANNELS.filter((c) => c.serviceGroup === state.serviceType);
   el.innerHTML = filtered.length
     ? filtered.map(renderChannelCard).join("")
-    : `<div class="col-span-full rounded-xl border border-white/10 bg-panel p-6 text-center text-sm text-muted">No channels for this service type.</div>`;
+    : `<div class="col-span-full rounded-xl border border-line/10 bg-panel p-6 text-center text-sm text-muted">No channels for this service type.</div>`;
 }
 
 function renderServicesSection() {
@@ -1339,6 +1399,7 @@ function renderServicesSection() {
 function renderAll() {
   renderSidebar();
   renderHeaderRolePill(currentRole, "user-badge");
+  renderThemeToggle();
   if (state.section === "services") {
     renderServicesSection();
   } else if (state.section === "financials") {
