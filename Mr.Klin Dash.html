@@ -414,44 +414,74 @@ function renderThemeToggle() {
 
 let notificationsOpen = false;
 
+// Read state persists per browser (like the walk-in bookings) so it
+// survives a reload, keyed by a deterministic id per notification source.
+const READ_NOTIFICATIONS_KEY = "mrklin_read_notifications_v1";
+function loadReadNotifications() {
+  try { return new Set(JSON.parse(localStorage.getItem(READ_NOTIFICATIONS_KEY)) || []); } catch (e) { return new Set(); }
+}
+function saveReadNotifications() {
+  localStorage.setItem(READ_NOTIFICATIONS_KEY, JSON.stringify([...readNotifications]));
+}
+let readNotifications = loadReadNotifications();
+
 function buildNotifications() {
   const sections = sectionsForRole(currentRole).map((s) => s.id);
   const items = [];
 
   if (sections.includes("overview") || sections.includes("services")) {
     buildAttentionItems().forEach((r) => {
+      const id = `attn-${r.channelId}-${r.status}`;
       items.push({
+        id,
         icon: "circle-alert",
         title: `${r.count} ${r.status.toLowerCase()} item${r.count === 1 ? "" : "s"} — ${r.channelName}`,
         status: r.status,
-        onclick: `closeNotifications(); openModal('${r.channelId}', null, '${r.status}')`,
+        onclick: `markNotificationRead('${id}'); closeNotifications(); openModal('${r.channelId}', null, '${r.status}')`,
       });
     });
   }
 
   if (sections.includes("financials")) {
     INVOICES.filter((i) => i.status === "Overdue").forEach((inv) => {
+      const id = `inv-${inv.id}`;
       items.push({
+        id,
         icon: "receipt",
         title: `${inv.account} — invoice ${inv.agingDays} day${inv.agingDays === 1 ? "" : "s"} overdue`,
         status: "Overdue",
-        onclick: `closeNotifications(); setSection('financials')`,
+        onclick: `markNotificationRead('${id}'); closeNotifications(); setSection('financials')`,
       });
     });
   }
 
   if (sections.includes("bookings")) {
     loadWalkinBookings().filter((b) => b.status && b.status !== "Completed").forEach((b) => {
+      const id = `book-${b.id}`;
       items.push({
+        id,
         icon: "car",
         title: `${b.vehicle || "Walk-in"} — ${b.service || "Service"}`,
         status: b.status,
-        onclick: `closeNotifications()`,
+        onclick: `markNotificationRead('${id}'); closeNotifications()`,
       });
     });
   }
 
-  return items;
+  return items.map((n) => ({ ...n, read: readNotifications.has(n.id) }));
+}
+
+function markNotificationRead(id) {
+  if (readNotifications.has(id)) return;
+  readNotifications.add(id);
+  saveReadNotifications();
+  renderNotifBell();
+}
+function markAllNotificationsRead() {
+  buildNotifications().forEach((n) => readNotifications.add(n.id));
+  saveReadNotifications();
+  renderNotifBell();
+  renderNotifPanel();
 }
 
 function toggleNotifications() {
@@ -466,7 +496,7 @@ function closeNotifications() {
 function renderNotifBell() {
   const badge = document.getElementById("notif-count");
   if (!badge) return;
-  const count = buildNotifications().length;
+  const count = buildNotifications().filter((n) => !n.read).length;
   badge.textContent = count > 9 ? "9+" : String(count);
   badge.classList.toggle("hidden", count === 0);
 }
@@ -480,18 +510,27 @@ function renderNotifPanel() {
   if (!notificationsOpen) return;
 
   const items = buildNotifications();
+  const unreadCount = items.filter((n) => !n.read).length;
   panel.innerHTML = `
     <div class="flex items-center justify-between border-b border-line/10 px-4 py-3">
       <p class="font-heading text-sm font-bold text-ink">Notifications</p>
-      ${items.length ? `<span class="text-xs text-muted">${items.length} item${items.length === 1 ? "" : "s"}</span>` : ""}
+      ${unreadCount > 0
+        ? `<button onclick="markAllNotificationsRead()" class="text-xs font-medium text-brand-amber hover:underline">Mark all as read</button>`
+        : items.length ? `<span class="text-xs text-muted">All read</span>` : ""}
     </div>
     <div class="max-h-80 overflow-y-auto p-2">
       ${items.length ? items.map((n) => `
-        <button onclick="${n.onclick}" class="flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-line/5">
-          <i data-lucide="${n.icon}" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
-          <span class="min-w-0 flex-1 truncate text-sm text-ink">${n.title}</span>
-          <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[n.status] || "bg-line/10 text-muted"}">${n.status}</span>
-        </button>`).join("") : `<p class="px-3 py-6 text-center text-sm text-muted">You're all caught up.</p>`}
+        <div class="flex items-start gap-1 rounded-xl transition-colors hover:bg-line/5">
+          <button onclick="${n.onclick}" class="flex min-w-0 flex-1 items-start gap-3 rounded-lg px-2 py-2.5 text-left">
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${n.read ? "" : "bg-brand-red"}"></span>
+            <i data-lucide="${n.icon}" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
+            <span class="min-w-0 flex-1 truncate text-sm ${n.read ? "text-muted" : "text-ink"}">${n.title}</span>
+            <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[n.status] || "bg-line/10 text-muted"}">${n.status}</span>
+          </button>
+          ${n.read ? "" : `<button onclick="markNotificationRead('${n.id}'); renderNotifPanel();" title="Mark as read" aria-label="Mark as read" class="mt-1.5 shrink-0 rounded-full p-1.5 text-muted transition-colors hover:bg-line/10 hover:text-brand-amber">
+            <i data-lucide="check" class="h-3.5 w-3.5"></i>
+          </button>`}
+        </div>`).join("") : `<p class="px-3 py-6 text-center text-sm text-muted">You're all caught up.</p>`}
     </div>`;
   lucide.createIcons();
 }
