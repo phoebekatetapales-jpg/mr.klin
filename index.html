@@ -488,9 +488,9 @@ function getDisplayRecentItems(channel) {
 // ---------------------------------------------------------------------------
 
 const ACCOUNTS = {
-  admin: { label: "Admin", password: "admin123" },
-  owner: { label: "Owner", password: "owner123" },
-  employee: { label: "Employee", password: "employee123" },
+  admin: { label: "Admin", password: "admin123", active: true },
+  owner: { label: "Owner", password: "owner123", active: true },
+  employee: { label: "Employee", password: "employee123", active: true },
 };
 const SESSION_KEY = "mrklin_session_v1";
 let loginRole = "admin";
@@ -575,7 +575,10 @@ function attemptLogin(event) {
   const password = document.getElementById("login-password").value;
   const account = ACCOUNTS[loginRole];
   const errorEl = document.getElementById("login-error");
-  if (account && password === account.password) {
+  if (account && !account.active) {
+    errorEl.textContent = "This role's access has been turned off by an Owner.";
+    errorEl.classList.remove("hidden");
+  } else if (account && password === account.password) {
     saveSession(loginRole);
     startApp(loginRole);
   } else {
@@ -697,9 +700,10 @@ function markWalkinDone(id) {
 
 function bootstrap() {
   const session = loadSession();
-  if (session && ACCOUNTS[session.role]) {
+  if (session && ACCOUNTS[session.role] && ACCOUNTS[session.role].active) {
     startApp(session.role);
   } else {
+    if (session) clearSession();
     renderLogin();
   }
 }
@@ -1419,17 +1423,27 @@ function renderPageHeader() {
 
 function accountAccessCard(role, accessDescription) {
   const account = ACCOUNTS[role];
+  const isSelf = role === currentRole;
+  const active = account.active;
   return `
-    <div class="flex flex-col gap-4 rounded-2xl border border-line/10 bg-panel p-5 shadow-lg shadow-black/20">
-      <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red/15">
-          <i data-lucide="user" class="h-5 w-5 text-brand-red"></i>
+    <div class="flex flex-col gap-4 rounded-2xl border border-line/10 bg-panel p-5 shadow-lg shadow-black/20 ${active ? "" : "opacity-60"}">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-red/15">
+            <i data-lucide="user" class="h-5 w-5 text-brand-red"></i>
+          </div>
+          <div class="min-w-0">
+            <p class="truncate font-heading text-base font-bold text-ink">${account.label}</p>
+            <p class="truncate text-xs text-muted">Access: ${accessDescription}</p>
+          </div>
         </div>
-        <div class="min-w-0">
-          <p class="truncate font-heading text-base font-bold text-ink">${account.label}</p>
-          <p class="truncate text-xs text-muted">Access: ${accessDescription}</p>
-        </div>
+        <button onclick="${isSelf ? "" : `toggleAccountActive('${role}')`}" role="switch" aria-checked="${active}"
+          title="${isSelf ? "You can't turn off the role you're signed in as" : active ? "Turn off sign-in" : "Turn on sign-in"}"
+          class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${active ? "bg-brand-red" : "bg-line/20"} ${isSelf ? "cursor-not-allowed opacity-50" : ""}">
+          <span class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${active ? "translate-x-6" : "translate-x-1"}"></span>
+        </button>
       </div>
+      <p class="text-xs font-medium ${active ? "text-brand-amber" : "text-muted"}">${active ? "Sign-in enabled" : "Sign-in turned off"}</p>
       <form onsubmit="updateAccountPassword(event, '${role}')" class="space-y-2">
         <label class="block text-xs font-medium text-muted">Set new password</label>
         <div class="flex gap-2">
@@ -1440,6 +1454,13 @@ function accountAccessCard(role, accessDescription) {
         <p id="access-confirm-${role}" class="hidden text-xs text-brand-amber">Password updated for this session.</p>
       </form>
     </div>`;
+}
+
+function toggleAccountActive(role) {
+  if (role === currentRole) return;
+  ACCOUNTS[role].active = !ACCOUNTS[role].active;
+  renderAccessSection();
+  lucide.createIcons();
 }
 
 function updateAccountPassword(event, role) {
