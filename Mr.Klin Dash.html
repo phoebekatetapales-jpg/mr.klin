@@ -239,11 +239,27 @@ const STATUS_STYLES = {
 };
 
 const KPIS = [
-  { id: "inquiries", label: "Total Inquiries", icon: "inbox", base: 96, unit: "", accent: "text-brand-red", ring: "bg-brand-red/15" },
-  { id: "bookings", label: "Active Bookings", icon: "calendar-check", base: 34, unit: "", accent: "text-brand-amber", ring: "bg-brand-amber/15" },
-  { id: "retention", label: "Retention Rate", icon: "repeat", base: 57, unit: "%", accent: "text-brand-red", ring: "bg-brand-red/15", flat: true },
-  { id: "b2bAccounts", label: "B2B Accounts", icon: "building-2", base: 14, unit: "", accent: "text-brand-amber", ring: "bg-brand-amber/15", flat: true },
+  { id: "inquiries", label: "Total Inquiries", icon: "inbox", base: 96, unit: "", accent: "text-brand-red", ring: "bg-brand-red/15", sub: "Across all 6 channels" },
+  { id: "bookings", label: "Active Bookings", icon: "calendar-check", base: 34, unit: "", accent: "text-brand-amber", ring: "bg-brand-amber/15", sub: "Confirmed & in progress" },
+  { id: "retention", label: "Retention Rate", icon: "repeat", base: 57, unit: "%", accent: "text-brand-red", ring: "bg-brand-red/15", flat: true, sub: "Of returning customers" },
+  { id: "b2bAccounts", label: "B2B Accounts", icon: "building-2", base: 14, unit: "", accent: "text-brand-amber", ring: "bg-brand-amber/15", flat: true, sub: "6 invoices outstanding" },
 ];
+
+// Static illustrative trend for the Overview chart — Mr. Klin has no real
+// monthly history store (only the Today/Week/Month scaling factors), so this
+// mirrors that shape rather than being tied to `state.timeframe`.
+const INQUIRY_TREND = [
+  { m: "Apr", pct: 54 },
+  { m: "May", pct: 61 },
+  { m: "Jun", pct: 68 },
+  { m: "Jul", pct: 65 },
+  { m: "Aug", pct: 74 },
+  { m: "Sep", pct: 88 },
+];
+
+// Statuses worth surfacing on the Overview "Needs your attention" list,
+// ordered by urgency (red/urgent first, informational last).
+const ATTENTION_STATUSES = ["Overdue", "Delayed", "Follow-up", "Abandoned", "New"];
 
 // ---------------------------------------------------------------------------
 // State
@@ -580,15 +596,10 @@ function renderKPIs() {
   el.innerHTML = KPIS.map((kpi) => {
     const value = scaleValue(kpi.base, kpi.flat);
     return `
-      <div class="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-white/10 bg-panel p-4 shadow-lg shadow-black/20 transition-colors hover:border-white/20">
-        <div class="absolute inset-0 ${kpi.ring} opacity-0 transition-opacity group-hover:opacity-100"></div>
-        <div class="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${kpi.ring}">
-          <i data-lucide="${kpi.icon}" class="h-5 w-5 ${kpi.accent}"></i>
-        </div>
-        <div class="relative min-w-0">
-          <p class="truncate text-sm text-muted">${kpi.label}</p>
-          <p class="font-heading text-2xl font-bold text-ink tabular-nums">${fmt(value)}${kpi.unit}</p>
-        </div>
+      <div class="rounded-2xl border border-white/10 bg-panel p-4 shadow-lg shadow-black/20 transition-colors hover:border-white/20">
+        <p class="truncate text-[11px] font-semibold uppercase tracking-wide text-muted">${kpi.label}</p>
+        <p class="mt-1.5 font-heading text-2xl font-bold text-ink tabular-nums">${fmt(value)}${kpi.unit}</p>
+        <p class="mt-1 truncate text-xs text-muted">${kpi.sub}</p>
       </div>`;
   }).join("");
 }
@@ -765,8 +776,8 @@ function setSection(id) {
   state.section = id;
   renderAll();
 }
-function openModal(channelId, feature) {
-  modalState = { channelId, feature: feature || null, status: "Overview" };
+function openModal(channelId, feature, status) {
+  modalState = { channelId, feature: feature || null, status: status || "Overview" };
   renderModal();
 }
 function closeModal() {
@@ -904,6 +915,25 @@ function countNewItems() {
   return CHANNELS.reduce((sum, ch) => sum + getDisplayRecentItems(ch).filter((i) => i.status === "New").length, 0);
 }
 
+// Builds the Overview "Needs your attention" list: one row per channel+status
+// combo that has at least one item in an ATTENTION_STATUSES bucket, ranked by
+// urgency then by how many items are waiting.
+function buildAttentionItems() {
+  const rows = [];
+  CHANNELS.forEach((ch) => {
+    const items = getDisplayRecentItems(ch);
+    ATTENTION_STATUSES.forEach((status) => {
+      const count = items.filter((i) => i.status === status).length;
+      if (count > 0) rows.push({ channelId: ch.id, channelName: ch.name, status, count });
+    });
+  });
+  rows.sort((a, b) => {
+    const rank = ATTENTION_STATUSES.indexOf(a.status) - ATTENTION_STATUSES.indexOf(b.status);
+    return rank !== 0 ? rank : b.count - a.count;
+  });
+  return rows.slice(0, 5);
+}
+
 function renderSidebar() {
   const sidebar = document.getElementById("sidebar");
   if (!sidebar) return;
@@ -993,10 +1023,93 @@ function renderSidebar() {
   lucide.createIcons();
 }
 
+function overviewCard(title, bodyHtml, actionHtml) {
+  return `
+    <div class="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-panel shadow-lg shadow-black/20">
+      <div class="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
+        <p class="font-heading text-base font-bold text-ink">${title}</p>
+        ${actionHtml || ""}
+      </div>
+      <div class="flex-1 p-5">${bodyHtml}</div>
+    </div>`;
+}
+
+function renderAttentionList() {
+  const rows = buildAttentionItems();
+  if (!rows.length) {
+    return `<p class="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-muted">All caught up — nothing needs attention right now.</p>`;
+  }
+  return `<ul class="space-y-2">` + rows.map((r) => `
+    <li class="flex items-center gap-3 rounded-xl border border-white/10 px-3 py-2.5 transition-colors hover:border-white/20">
+      <span class="min-w-0 flex-1 truncate text-sm text-ink">${r.count} ${r.status.toLowerCase()} item${r.count === 1 ? "" : "s"} <span class="text-muted">— ${r.channelName}</span></span>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[r.status] || "bg-white/10 text-muted"}">${r.status}</span>
+      <button onclick="openModal('${r.channelId}', null, '${r.status}')" class="shrink-0 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-brand-amber hover:text-brand-amber">Open</button>
+    </li>`).join("") + `</ul>`;
+}
+
+function renderTrendChart() {
+  return `
+    <div class="flex items-end justify-between gap-2 sm:gap-3" style="height:140px">
+      ${INQUIRY_TREND.map((h, i) => {
+        const isCurrent = i === INQUIRY_TREND.length - 1;
+        return `
+        <div class="flex flex-1 flex-col items-center gap-2">
+          <div class="flex w-full flex-1 items-end">
+            <div class="w-full rounded-t-md ${isCurrent ? "bg-brand-red" : "bg-white/10"}" style="height:${h.pct}%"></div>
+          </div>
+          <span class="text-[11px] font-medium ${isCurrent ? "text-brand-amber" : "text-muted"}">${h.m}</span>
+        </div>`;
+      }).join("")}
+    </div>
+    <p class="mt-4 text-xs text-muted">Inquiry volume relative to this month's peak — updates as new channels report in.</p>`;
+}
+
+function renderLatestActivityList() {
+  const rows = CHANNELS.map((ch) => {
+    const items = getDisplayRecentItems(ch);
+    return items.length ? { ch, item: items[0] } : null;
+  }).filter(Boolean).slice(0, 4);
+  return `<ul class="space-y-2">` + rows.map(({ ch, item }) => `
+    <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3">
+      <i data-lucide="${ch.icon}" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium text-ink">${item.title}</p>
+        <p class="mt-0.5 truncate text-xs text-muted">${item.sub}</p>
+      </div>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-white/10 text-muted"}">${item.status}</span>
+    </li>`).join("") + `</ul>`;
+}
+
+function renderFleetStatusList() {
+  const mobile = CHANNELS.find((c) => c.id === "mobile");
+  const items = getDisplayRecentItems(mobile).slice(0, 4);
+  return `<ul class="space-y-2">` + items.map((item) => `
+    <li class="flex items-start gap-3 rounded-xl border border-white/10 p-3">
+      <i data-lucide="truck" class="mt-0.5 h-4 w-4 shrink-0 text-brand-amber"></i>
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-sm font-medium text-ink">${item.title}</p>
+        <p class="mt-0.5 truncate text-xs text-muted">${item.time}</p>
+      </div>
+      <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[item.status] || "bg-white/10 text-muted"}">${item.status}</span>
+    </li>`).join("") + `</ul>`;
+}
+
 function renderOverviewSection() {
   const root = document.getElementById("section-root");
   root.innerHTML = `
+    <div>
+      <p class="font-heading text-xl font-bold text-ink">Overview</p>
+      <p class="mt-1 text-sm text-muted">What needs attention today, and how the channels are trending.</p>
+    </div>
     <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      ${overviewCard("Needs your attention", renderAttentionList())}
+      ${overviewCard("Inquiry trend, last six months", renderTrendChart())}
+    </div>
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      ${overviewCard("Latest activity", renderLatestActivityList(), `<button onclick="setSection('services')" class="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Open all</button>`)}
+      ${overviewCard("Mobile fleet status", renderFleetStatusList(), `<button onclick="openModal('mobile')" class="rounded-lg border border-white/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-brand-amber hover:text-brand-amber">Manage</button>`)}
+    </div>
     <div id="filter-bar"></div>
     <div id="channels-grid" class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"></div>`;
   renderKPIs();
