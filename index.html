@@ -21,7 +21,8 @@
           },
         },
         fontFamily: {
-          heading: ["Inter", "system-ui", "sans-serif"],
+          heading: ["Rajdhani", "Inter", "system-ui", "sans-serif"],
+          display: ["Orbitron", "Rajdhani", "system-ui", "sans-serif"],
           sans: ["Inter", "system-ui", "sans-serif"],
         },
       },
@@ -30,12 +31,12 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 <style>
   .tabular-nums { font-variant-numeric: tabular-nums; }
   body { font-feature-settings: "cv11", "ss01"; letter-spacing: -0.006em; }
-  .font-heading { letter-spacing: -0.015em; }
+  .font-heading { letter-spacing: 0.01em; }
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-thumb { background: rgb(var(--color-line) / 0.12); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -66,6 +67,75 @@
     --color-ink: 17 19 23;
     --color-muted: 100 106 118;
     --color-line: 0 0 0;
+  }
+
+  /* ---------------------------------------------------------------------
+     Automotive instrument-cluster styling
+     --------------------------------------------------------------------- */
+  .font-display { letter-spacing: 0.03em; }
+  /* Carbon-fibre weave + a faint red ambient glow behind the dark theme */
+  :root:not([data-theme="light"]) body {
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgb(230 57 70 / 0.07), transparent 70%),
+      repeating-linear-gradient(45deg, rgb(255 255 255 / 0.016) 0 2px, transparent 2px 4px),
+      repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.22) 0 2px, transparent 2px 4px);
+    background-attachment: fixed;
+  }
+  /* Brushed-bezel top highlight on every dark panel */
+  :root:not([data-theme="light"]) .bg-panel {
+    background-image: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0) 45%);
+  }
+  .racing-stripe {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #E63946 15%, #E63946 60%, #F2A93B 75%, transparent);
+    opacity: 0.8;
+  }
+  .glow-red { text-shadow: 0 0 14px rgb(230 57 70 / 0.65); }
+  .glow-amber { text-shadow: 0 0 14px rgb(242 169 59 / 0.55); }
+  .led-red { box-shadow: 0 0 10px rgb(230 57 70 / 0.7); }
+  /* Segmented LED look for bar fills */
+  .seg-h {
+    -webkit-mask-image: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 9px);
+            mask-image: repeating-linear-gradient(90deg, #000 0 7px, transparent 7px 9px);
+  }
+  .seg-v {
+    -webkit-mask-image: repeating-linear-gradient(0deg, #000 0 6px, transparent 6px 8px);
+            mask-image: repeating-linear-gradient(0deg, #000 0 6px, transparent 6px 8px);
+  }
+
+  /* The cluster stays dark in both themes, like a real dash at night. */
+  .cluster {
+    color: #EDEEF0;
+    background: radial-gradient(ellipse 70% 90% at 50% 0%, #22252b 0%, #101114 60%, #0a0b0d 100%);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.07),
+      inset 0 -30px 60px rgb(0 0 0 / 0.55),
+      0 24px 48px -24px rgb(0 0 0 / 0.65);
+  }
+  .cluster .c-muted { color: #8D929B; }
+  .cluster .c-line { border-color: rgb(255 255 255 / 0.08); }
+  .gauge-needle {
+    transform-box: view-box;
+    transform-origin: 100px 100px;
+    transform: rotate(var(--deg));
+    animation: needle-move 1.1s cubic-bezier(0.22, 0.9, 0.25, 1) both;
+  }
+  .gauge-needle.boot { animation: needle-boot 1.8s cubic-bezier(0.45, 0, 0.25, 1) both; }
+  @keyframes needle-move { from { transform: rotate(var(--from)); } to { transform: rotate(var(--deg)); } }
+  @keyframes needle-boot {
+    0% { transform: rotate(-120deg); }
+    45% { transform: rotate(120deg); }
+    100% { transform: rotate(var(--deg)); }
+  }
+  .gauge-arc { stroke-dasharray: var(--pct) 100; animation: arc-move 1.1s cubic-bezier(0.22, 0.9, 0.25, 1) both; }
+  @keyframes arc-move { from { stroke-dasharray: var(--from-pct) 100; } to { stroke-dasharray: var(--pct) 100; } }
+  .telltale { opacity: 0.22; transition: opacity 0.2s, transform 0.2s; }
+  .telltale.on { opacity: 1; color: var(--tt); }
+  .telltale.on svg { filter: drop-shadow(0 0 6px var(--tt)); }
+  .telltale.on:hover { transform: translateY(-1px); }
+  @media (prefers-reduced-motion: reduce) {
+    .gauge-needle, .gauge-needle.boot, .gauge-arc { animation: none; }
   }
 </style>
 </head>
@@ -112,6 +182,7 @@
               <div id="user-badge" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-line/10 bg-line/5 px-3 py-1.5"></div>
             </div>
           </div>
+          <div class="racing-stripe absolute inset-x-0 bottom-0"></div>
         </header>
 
         <main class="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8">
@@ -669,6 +740,9 @@ function renderLogin() {
       <div class="relative hidden w-[44%] max-w-xl flex-col justify-between overflow-hidden border-r border-white/5 bg-[#111215] p-10 text-white lg:flex">
         <div class="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-brand-red/20 blur-3xl"></div>
         <div class="pointer-events-none absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-brand-amber/10 blur-3xl"></div>
+        <div class="pointer-events-none absolute -bottom-28 -right-28 w-[440px] opacity-35">
+          ${gaugeHtml({ id: "login", value: 82, max: 100, label: "MR. KLIN", display: "READY", boot: true })}
+        </div>
         <div class="relative flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-red"><i data-lucide="spray-can" class="h-5 w-5 text-white"></i></div>
           <div>
@@ -677,7 +751,7 @@ function renderLogin() {
           </div>
         </div>
         <div class="relative">
-          <p class="font-heading text-3xl font-semibold leading-tight">Every customer channel,<br>one clear view.</p>
+          <p class="font-heading text-4xl font-bold uppercase leading-tight">Every customer channel,<br><span class="text-brand-red">one instrument cluster.</span></p>
           <p class="mt-3 max-w-sm text-sm text-white/60">Walk-ins, social, web, mobile units, loyalty and fleet accounts — tracked side by side with the numbers that matter.</p>
         </div>
         <p class="relative text-xs text-white/40">© ${new Date().getFullYear()} MR. Klin Trading Services Corporation</p>
@@ -711,7 +785,7 @@ function renderLogin() {
             </div>
           </div>
           <p id="login-error" class="hidden text-xs text-brand-red"></p>
-          <button type="submit" class="w-full rounded-lg bg-brand-red px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-red/90">Sign in</button>
+          <button type="submit" class="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-red px-4 py-2.5 text-sm font-semibold uppercase tracking-wider text-white shadow-lg shadow-brand-red/30 transition-colors hover:bg-brand-red/90"><i data-lucide="power" class="h-4 w-4"></i>Sign in</button>
         </form>
       </div>
       </div>
@@ -893,10 +967,11 @@ function renderBookingDayPanel(bookings) {
       <div class="flex-1 space-y-2 overflow-y-auto p-4" style="max-height:340px">
         ${dayBookings.length ? dayBookings.map((b) => `
           <div class="flex items-start gap-3 rounded-lg border border-line/10 p-3">
-            <i data-lucide="car" class="mt-0.5 h-4 w-4 shrink-0 text-muted"></i>
+            ${carThumbHtml(findCarModel(b.vehicle))}
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium text-ink">${b.vehicle || "Vehicle"}${b.plate ? ` <span class="text-muted">· ${b.plate}</span>` : ""}</p>
               <p class="mt-0.5 truncate text-xs text-muted">${b.service || "Service"} · ${b.ownerName || "—"}</p>
+              ${findCarModel(b.vehicle) ? `<div class="mt-0.5">${carLinkHtml(findCarModel(b.vehicle))}</div>` : ""}
             </div>
             <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[b.status] || "bg-line/10 text-muted"}">${b.status || "Booked"}</span>
           </div>`).join("") : `<p class="py-6 text-center text-sm text-muted">No units booked for this day.</p>`}
@@ -970,7 +1045,15 @@ function renderBookingsSection() {
                 <td class="whitespace-nowrap px-4 py-3 text-ink tabular-nums">${formatDateKey(bookingDateKey(v))}</td>
                 <td class="whitespace-nowrap px-4 py-3 text-ink">${v.ownerName || "—"}</td>
                 <td class="whitespace-nowrap px-4 py-3 text-muted">${v.phone || "—"}</td>
-                <td class="whitespace-nowrap px-4 py-3 text-ink">${v.vehicle || "—"}</td>
+                <td class="whitespace-nowrap px-4 py-3 text-ink">
+                  <div class="flex items-center gap-3">
+                    ${carThumbHtml(findCarModel(v.vehicle))}
+                    <div>
+                      <p>${v.vehicle || "—"}</p>
+                      ${carLinkHtml(findCarModel(v.vehicle))}
+                    </div>
+                  </div>
+                </td>
                 <td class="whitespace-nowrap px-4 py-3 text-muted">${v.plate || "—"}</td>
                 <td class="whitespace-nowrap px-4 py-3 text-muted">${v.service || "—"}</td>
                 <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
@@ -1016,22 +1099,196 @@ function bootstrap() {
 
 function statCard(label, value, sub, icon) {
   return `
-    <div class="rounded-xl border border-line/10 bg-panel p-5 shadow-sm shadow-black/5 transition-colors hover:border-line/20">
+    <div class="relative overflow-hidden rounded-xl border border-line/10 bg-panel p-5 shadow-sm shadow-black/5 transition-colors hover:border-line/20">
+      <span class="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-brand-red via-brand-amber/60 to-transparent"></span>
       <div class="flex items-start justify-between gap-3">
-        <p class="truncate text-xs font-medium text-muted">${label}</p>
+        <p class="truncate text-[11px] font-semibold uppercase tracking-wider text-muted">${label}</p>
         ${icon ? `<span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-line/5 text-muted"><i data-lucide="${icon}" class="h-4 w-4"></i></span>` : ""}
       </div>
-      <p class="mt-2 font-heading text-[26px] font-semibold leading-none text-ink tabular-nums">${value}</p>
+      <p class="mt-2 truncate font-display text-lg font-bold leading-none text-ink tabular-nums sm:text-[22px]">${value}</p>
       <p class="mt-2 truncate text-xs text-muted">${sub}</p>
     </div>`;
 }
 
+// ---------------------------------------------------------------------------
+// Instrument cluster — SVG dials, a centre console and warning lights.
+// ---------------------------------------------------------------------------
+
+// Remembers each dial's last needle angle so a re-render (e.g. switching
+// timeframe) swings the needle from where it was rather than from zero.
+const lastGaugeDeg = {};
+let clusterBooted = false;
+
+function gaugePolar(r, deg) {
+  const a = (deg * Math.PI) / 180;
+  return [100 + r * Math.sin(a), 100 - r * Math.cos(a)];
+}
+function gaugeArc(r, from, to) {
+  const [x1, y1] = gaugePolar(r, from);
+  const [x2, y2] = gaugePolar(r, to);
+  return `M ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 ${to - from > 180 ? 1 : 0} 1 ${x2.toFixed(2)} ${y2.toFixed(2)}`;
+}
+// Rounds the dial's full-scale up to a 1/2/2.5/5 x 10^n step with headroom.
+function gaugeNiceMax(v) {
+  if (v <= 0) return 10;
+  const target = v * 1.3;
+  const p = Math.pow(10, Math.floor(Math.log10(target)));
+  const n = target / p;
+  return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p;
+}
+function compactNum(n) {
+  if (n >= 1000) return (n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "") + "k";
+  return String(Math.round(n * 10) / 10);
+}
+
+function gaugeHtml({ id, value, max, label, unit, display, boot }) {
+  const pct = Math.max(0, Math.min(1, value / max));
+  const deg = -120 + pct * 240;
+  const from = lastGaugeDeg[id] ?? -120;
+  lastGaugeDeg[id] = deg;
+  const fromPct = ((from + 120) / 240) * 100;
+
+  let ticks = "";
+  for (let i = 0; i <= 50; i++) {
+    const a = -120 + i * 4.8;
+    const major = i % 10 === 0;
+    const inner = major ? 68 : i % 5 === 0 ? 72 : 75;
+    const [x1, y1] = gaugePolar(79, a);
+    const [x2, y2] = gaugePolar(inner, a);
+    const red = i >= 42;
+    ticks += `<line x1="${x1.toFixed(2)}" y1="${y1.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${y2.toFixed(2)}" stroke="${red ? "#E63946" : major ? "#EDEEF0" : "rgba(237,238,240,.45)"}" stroke-width="${major ? 2 : 1}" stroke-linecap="round"/>`;
+    if (major) {
+      const [tx, ty] = gaugePolar(57, a);
+      ticks += `<text x="${tx.toFixed(2)}" y="${(ty + 3).toFixed(2)}" text-anchor="middle" font-family="Orbitron, sans-serif" font-size="8" font-weight="600" fill="${red ? "#E63946" : "rgba(237,238,240,.75)"}">${compactNum((max * i) / 50)}</text>`;
+    }
+  }
+
+  const shown = display ?? compactNum(value);
+  return `
+    <svg viewBox="0 0 200 186" class="block h-auto w-full" role="img" aria-label="${label}: ${shown}${unit || ""}">
+      <defs>
+        <linearGradient id="gauge-grad-${id}" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0" stop-color="#F2A93B"/>
+          <stop offset="1" stop-color="#E63946"/>
+        </linearGradient>
+        <radialGradient id="gauge-face-${id}" cx="50%" cy="45%" r="55%">
+          <stop offset="0" stop-color="#1c1e23"/>
+          <stop offset="1" stop-color="#0b0c0e"/>
+        </radialGradient>
+      </defs>
+      <circle cx="100" cy="100" r="92" fill="url(#gauge-face-${id})" stroke="rgba(255,255,255,.08)" stroke-width="1.5"/>
+      <circle cx="100" cy="100" r="88" fill="none" stroke="rgba(0,0,0,.6)" stroke-width="2"/>
+      <path d="${gaugeArc(84, -120, 120)}" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="4" stroke-linecap="round"/>
+      <path d="${gaugeArc(84, -120 + 0.84 * 240, 120)}" fill="none" stroke="rgba(230,57,70,.55)" stroke-width="4" stroke-linecap="round"/>
+      <path d="${gaugeArc(84, -120, 120)}" pathLength="100" class="gauge-arc" style="--pct:${(pct * 100).toFixed(2)};--from-pct:${fromPct.toFixed(2)}" fill="none" stroke="url(#gauge-grad-${id})" stroke-width="4" stroke-linecap="round" filter="drop-shadow(0 0 3px rgba(230,57,70,.8))"/>
+      ${ticks}
+      <g class="gauge-needle ${boot ? "boot" : ""}" style="--deg:${deg.toFixed(2)}deg;--from:${from.toFixed(2)}deg">
+        <polygon points="98,106 102,106 100.5,26 99.5,26" fill="#E63946" filter="drop-shadow(0 0 3px rgba(230,57,70,.9))"/>
+      </g>
+      <circle cx="100" cy="100" r="9" fill="#16181c" stroke="rgba(255,255,255,.18)" stroke-width="1.5"/>
+      <circle cx="100" cy="100" r="3" fill="#E63946"/>
+      <text x="100" y="146" text-anchor="middle" font-family="Orbitron, sans-serif" font-size="19" font-weight="700" fill="#EDEEF0">${shown}<tspan font-size="9" fill="#8D929B">${unit || ""}</tspan></text>
+      <text x="100" y="163" text-anchor="middle" font-family="Rajdhani, sans-serif" font-size="9.5" font-weight="700" letter-spacing="2.2" fill="#8D929B">${label.toUpperCase()}</text>
+    </svg>`;
+}
+
+// Attention statuses rendered as dashboard warning lights. Red = stop and
+// look, amber = caution, blue = informational (like a high-beam lamp).
+const TELLTALES = [
+  { status: "Overdue", label: "Overdue", icon: "triangle-alert", color: "#E63946" },
+  { status: "Abandoned", label: "Abandoned", icon: "octagon-x", color: "#E63946" },
+  { status: "Delayed", label: "Delayed", icon: "timer", color: "#F2A93B" },
+  { status: "Follow-up", label: "Follow-up", icon: "phone-forwarded", color: "#F2A93B" },
+  { status: "New", label: "New lead", icon: "bell-ring", color: "#4CC9F0" },
+];
+
+function renderTelltales() {
+  return TELLTALES.map((t) => {
+    let count = 0;
+    let firstChannel = null;
+    CHANNELS.forEach((ch) => {
+      const n = getDisplayRecentItems(ch).filter((i) => i.status === t.status).length;
+      if (n && !firstChannel) firstChannel = ch.id;
+      count += n;
+    });
+    const on = count > 0;
+    return `
+      <button ${on ? `onclick="openModal('${firstChannel}', null, '${t.status}')"` : "disabled"}
+        title="${t.label}: ${count}"
+        class="telltale ${on ? "on" : ""} flex min-w-[64px] flex-1 flex-col items-center gap-1 rounded-lg px-2 py-2" style="--tt:${t.color}">
+        <i data-lucide="${t.icon}" class="h-5 w-5"></i>
+        <span class="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wider">${t.label}${on ? ` · ${count}` : ""}</span>
+      </button>`;
+  }).join("");
+}
+
+function clusterClockText() {
+  const now = new Date();
+  return now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }) + " · " +
+    now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
+}
+setInterval(() => {
+  const el = document.getElementById("cluster-clock");
+  if (el) el.textContent = clusterClockText();
+}, 15000);
+
 function renderKPIs() {
   const el = document.getElementById("kpi-header");
-  el.innerHTML = KPIS.map((kpi) => {
-    const value = scaleValue(kpi.base, kpi.flat);
-    return statCard(kpi.label, fmt(value) + kpi.unit, kpi.sub, kpi.icon);
-  }).join("");
+  const kpi = Object.fromEntries(KPIS.map((k) => [k.id, scaleValue(k.base, k.flat)]));
+  const tf = TIMEFRAMES.find((t) => t.id === state.timeframe);
+  const gear = { today: "D", week: "W", month: "M" }[state.timeframe] || "D";
+  const fuelSegs = 10;
+  const fuelLit = Math.round((kpi.retention / 100) * fuelSegs);
+  const odo = String(kpi.b2bAccounts).padStart(6, "0");
+  const boot = !clusterBooted;
+  clusterBooted = true;
+
+  el.innerHTML = `
+    <div class="cluster overflow-hidden rounded-2xl">
+      <div class="grid grid-cols-2 items-center gap-x-2 gap-y-4 px-3 pb-2 pt-5 sm:grid-cols-[1fr_minmax(190px,0.8fr)_1fr] sm:gap-4 sm:px-6">
+        <div class="mx-auto w-full max-w-[300px]">
+          ${gaugeHtml({ id: "inquiries", value: kpi.inquiries, max: gaugeNiceMax(kpi.inquiries), label: "Total inquiries", boot })}
+        </div>
+
+        <div class="order-first col-span-2 flex flex-col items-center gap-4 text-center sm:order-none sm:col-span-1">
+          <div class="flex items-center gap-2 font-display text-xs c-muted">
+            <i data-lucide="clock" class="h-3.5 w-3.5"></i>
+            <span id="cluster-clock">${clusterClockText()}</span>
+          </div>
+          <div>
+            <p class="text-[10px] font-semibold uppercase tracking-[0.3em] c-muted">Drive mode</p>
+            <p class="font-display text-5xl font-extrabold leading-none text-brand-amber glow-amber">${gear}</p>
+            <p class="mt-1 text-[11px] font-semibold uppercase tracking-wider c-muted">${tf.label}</p>
+          </div>
+          <div class="w-full max-w-[220px]">
+            <div class="mb-1.5 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wider c-muted">
+              <span class="inline-flex items-center gap-1"><i data-lucide="fuel" class="h-3.5 w-3.5"></i>Retention</span>
+              <span class="font-display text-xs text-white">${kpi.retention}%</span>
+            </div>
+            <div class="flex gap-1">
+              ${Array.from({ length: fuelSegs }, (_, i) => `<span class="h-2.5 flex-1 rounded-sm ${
+                i < fuelLit ? (i < 2 ? "bg-brand-red led-red" : "bg-brand-amber") : "bg-white/10"
+              }"></span>`).join("")}
+            </div>
+            <div class="mt-1 flex justify-between font-display text-[9px] c-muted"><span>E</span><span>½</span><span>F</span></div>
+          </div>
+          <div>
+            <div class="flex justify-center gap-0.5">
+              ${odo.split("").map((d) => `<span class="flex h-7 w-5 items-center justify-center rounded-sm border border-white/10 bg-black/60 font-display text-sm font-bold text-white">${d}</span>`).join("")}
+            </div>
+            <p class="mt-1.5 text-[10px] font-semibold uppercase tracking-wider c-muted">B2B fleet accounts</p>
+          </div>
+        </div>
+
+        <div class="mx-auto w-full max-w-[300px]">
+          ${gaugeHtml({ id: "bookings", value: kpi.bookings, max: gaugeNiceMax(kpi.bookings), label: "Active bookings", boot })}
+        </div>
+      </div>
+
+      <div class="c-line flex flex-wrap justify-center gap-1 border-t px-3 py-2 sm:px-6">
+        ${renderTelltales()}
+      </div>
+    </div>`;
 }
 
 function renderFilterBar() {
@@ -1039,16 +1296,16 @@ function renderFilterBar() {
   el.innerHTML = `
     <div class="flex flex-col gap-3 rounded-xl border border-line/10 bg-panel px-4 py-3 shadow-sm shadow-black/5 sm:flex-row sm:items-center sm:justify-between">
       <div class="flex items-center gap-2 text-muted">
-        <i data-lucide="sliders-horizontal" class="h-4 w-4"></i>
-        <span class="text-sm font-medium">Filters</span>
+        <i data-lucide="gauge" class="h-4 w-4 text-brand-red"></i>
+        <span class="text-[11px] font-semibold uppercase tracking-wider">Drive mode</span>
       </div>
       <div class="flex items-center gap-2">
         <i data-lucide="calendar-days" class="h-4 w-4 text-muted shrink-0"></i>
         <div class="flex rounded-xl bg-line/5 p-1">
           ${TIMEFRAMES.map((tf) => `
             <button onclick="setTimeframe('${tf.id}')"
-              class="rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                state.timeframe === tf.id ? "bg-panel text-ink shadow-sm ring-1 ring-line/10" : "text-muted hover:text-ink"
+              class="rounded-lg px-3 py-1.5 font-heading text-sm font-semibold uppercase tracking-wider transition-colors ${
+                state.timeframe === tf.id ? "bg-brand-red text-white shadow-md shadow-brand-red/30" : "text-muted hover:text-ink"
               }">${tf.label}</button>`).join("")}
         </div>
       </div>
@@ -1214,6 +1471,85 @@ function setModalStatusFilter(status) {
   renderModal();
 }
 
+
+// Popular models in the Philippines — photos are Wikimedia Commons
+// thumbnails (hotlinked), links go to each manufacturer's model page.
+// Bookings store the vehicle as free text, so matching is by name.
+const CAR_MODELS = [
+  { name: "Toyota Vios", type: "Sedan", url: "https://toyota.com.ph/vios", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a3/Toyota_Vios_1.5_VVT-i_G_%28IV%29_%E2%80%93_f_13032025.jpg/330px-Toyota_Vios_1.5_VVT-i_G_%28IV%29_%E2%80%93_f_13032025.jpg" },
+  { name: "Toyota Camry", type: "Sedan", url: "https://toyota.com.ph/camry", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/2018_Toyota_Camry_%28ASV70R%29_Ascent_sedan_%282018-08-27%29_01.jpg/330px-2018_Toyota_Camry_%28ASV70R%29_Ascent_sedan_%282018-08-27%29_01.jpg" },
+  { name: "Toyota Fortuner", type: "SUV", url: "https://toyota.com.ph/fortuner", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/66/2015_Toyota_Fortuner_%28New_Zealand%29.jpg/330px-2015_Toyota_Fortuner_%28New_Zealand%29.jpg" },
+  { name: "Toyota Innova", type: "MPV", url: "https://toyota.com.ph/innova", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/36/Toyota_Innova_Zenix_2.0_V_%28III%29_%E2%80%93_f_22032025.jpg/330px-Toyota_Innova_Zenix_2.0_V_%28III%29_%E2%80%93_f_22032025.jpg" },
+  { name: "Toyota Hilux", type: "Pickup", url: "https://toyota.com.ph/hilux", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1b/2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Front.jpg/330px-2016_Toyota_HiLux_Invincible_D-4D_4WD_2.4_Front.jpg" },
+  { name: "Mitsubishi Montero Sport", type: "SUV", url: "https://www.mitsubishi-motors.com.ph/cars/montero-sport", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/19/Mitsubishi_Pajero_Sport_%283rd_generation%29_1X7A0409.jpg/330px-Mitsubishi_Pajero_Sport_%283rd_generation%29_1X7A0409.jpg" },
+  { name: "Mitsubishi Mirage", type: "Hatchback", url: "https://www.mitsubishi-motors.com.ph/cars/mirage-g4", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e8/2021_Mitsubishi_Mirage_Carbonite_Edition_in_White_Diamond%2C_front_right.jpg/330px-2021_Mitsubishi_Mirage_Carbonite_Edition_in_White_Diamond%2C_front_right.jpg" },
+  { name: "Mitsubishi Xpander", type: "MPV", url: "https://www.mitsubishi-motors.com.ph/cars/xpander", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/2018_Mitsubishi_Xpander_Ultimate_1.5_NC1W_%2820190623%29.jpg/330px-2018_Mitsubishi_Xpander_Ultimate_1.5_NC1W_%2820190623%29.jpg" },
+  { name: "Ford Ranger", type: "Pickup", url: "https://www.ford.com.ph/showroom/trucks/ford-ranger/", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/28/Ford_Ranger_%28T6%2C_P703%29_Wildtrak_IMG_7320.jpg/330px-Ford_Ranger_%28T6%2C_P703%29_Wildtrak_IMG_7320.jpg" },
+  { name: "Ford Everest", type: "SUV", url: "https://www.ford.com.ph/showroom/suvs/ford-everest/", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ab/Ford_Everest_3.0_V6_Turbo_Diesel_4WD_Platinum_%28III%29_%E2%80%93_f_02012026.jpg/330px-Ford_Everest_3.0_V6_Turbo_Diesel_4WD_Platinum_%28III%29_%E2%80%93_f_02012026.jpg" },
+  { name: "Ford F-150", type: "Pickup", url: "https://www.ford.com/trucks/f150/", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f0/2018_Ford_F-150_XLT_Crew_Cab%2C_front_11.10.19.jpg/330px-2018_Ford_F-150_XLT_Crew_Cab%2C_front_11.10.19.jpg" },
+  { name: "Honda City", type: "Sedan", url: "https://www.hondaphil.com/model/city", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e7/Honda_City_1.5_i-VTEC_V_%28VIII%2C_Facelift%29_%E2%80%93_f_22032025.jpg/330px-Honda_City_1.5_i-VTEC_V_%28VIII%2C_Facelift%29_%E2%80%93_f_22032025.jpg" },
+  { name: "Honda Civic", type: "Sedan", url: "https://www.hondaphil.com/model/civic", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1a/Honda_Civic_e-HEV_Sport_%28XI%29_%E2%80%93_f_30062024.jpg/330px-Honda_Civic_e-HEV_Sport_%28XI%29_%E2%80%93_f_30062024.jpg" },
+  { name: "Honda CR-V", type: "SUV", url: "https://www.hondaphil.com/model/cr-v", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1b/Honda_CR-V_e-HEV_Elegance_AWD_%28VI%29_%E2%80%93_f_14072024.jpg/330px-Honda_CR-V_e-HEV_Elegance_AWD_%28VI%29_%E2%80%93_f_14072024.jpg" },
+  { name: "Nissan Navara", type: "Pickup", url: "https://www.nissan.ph/vehicles/new/navara.html", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/11/2021_Nissan_Navara_facelift_%28cropped%29.jpg/330px-2021_Nissan_Navara_facelift_%28cropped%29.jpg" },
+  { name: "Suzuki Ertiga", type: "MPV", url: "https://auto.suzuki.com.ph/mpv/ertiga-hybrid?id=ertiga", photo: "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f9/Suzuki_Ertiga_NC_FL_1.5_GLX_Hybrid_Snow_White_Pearl.jpg/330px-Suzuki_Ertiga_NC_FL_1.5_GLX_Hybrid_Snow_White_Pearl.jpg" },
+];
+
+// Exact name match first, then the longest catalog name contained in the
+// text (so "2010 Ford F-150 XLT" still finds the F-150).
+function findCarModel(text) {
+  const t = (text || "").trim().toLowerCase();
+  if (!t) return null;
+  return CAR_MODELS.find((c) => c.name.toLowerCase() === t) ||
+    CAR_MODELS.filter((c) => t.includes(c.name.toLowerCase()) || t.includes(c.name.split(" ").slice(1).join(" ").toLowerCase()))
+      .sort((a, b) => b.name.length - a.name.length)[0] || null;
+}
+function carSiteLabel(url) {
+  return new URL(url).hostname.replace(/^www\./, "");
+}
+// Small photo tile; falls back to a car icon if the image can't load.
+function carThumbHtml(car, size) {
+  const box = size === "lg" ? "h-24 w-36" : "h-9 w-14";
+  if (!car) return `<span class="flex ${box} shrink-0 items-center justify-center rounded-md bg-line/5 text-muted"><i data-lucide="car" class="h-4 w-4"></i></span>`;
+  return `<span class="relative flex ${box} shrink-0 items-center justify-center overflow-hidden rounded-md bg-line/5 text-muted">
+      <i data-lucide="car" class="h-4 w-4"></i>
+      <img src="${car.photo}" alt="${car.name}" loading="lazy" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()">
+    </span>`;
+}
+function carLinkHtml(car) {
+  if (!car) return "";
+  return `<a href="${car.url}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" title="Open ${car.name} on ${carSiteLabel(car.url)}"
+      class="inline-flex items-center gap-1 text-xs font-medium text-brand-amber hover:underline">${carSiteLabel(car.url)}<i data-lucide="external-link" class="h-3 w-3"></i></a>`;
+}
+
+function selectCarModel(name) {
+  const input = document.getElementById("bf-vehicle");
+  if (!input) return;
+  input.value = name;
+  previewCar();
+}
+function previewCar() {
+  const el = document.getElementById("bf-car-preview");
+  if (!el) return;
+  const car = findCarModel(document.getElementById("bf-vehicle").value);
+  document.querySelectorAll("[data-car-chip]").forEach((chip) => {
+    const on = car && chip.dataset.carChip === car.name;
+    chip.classList.toggle("border-brand-red", !!on);
+    chip.classList.toggle("ring-2", !!on);
+    chip.classList.toggle("ring-brand-red/30", !!on);
+  });
+  el.innerHTML = car ? `
+    <div class="flex items-center gap-3 rounded-lg border border-line/10 bg-line/5 p-2.5">
+      ${carThumbHtml(car, "lg")}
+      <div class="min-w-0">
+        <p class="font-heading text-base font-semibold text-ink">${car.name}</p>
+        <p class="text-xs text-muted">${car.type}</p>
+        <div class="mt-1">${carLinkHtml(car)}</div>
+        <p class="mt-1 text-[10px] text-muted/80">Photo: Wikimedia Commons</p>
+      </div>
+    </div>` : "";
+  lucide.createIcons();
+}
+
 function openBookingForm(date) {
   const channel = CHANNELS.find((c) => c.id === "walkin");
   const defaultDate = date || todayKey();
@@ -1249,9 +1585,10 @@ function openBookingForm(date) {
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="mb-1 block text-xs font-medium text-muted">Vehicle make/model *</label>
-              <input required id="bf-vehicle" type="text"
+              <input required id="bf-vehicle" type="text" list="bf-car-list" oninput="previewCar()" autocomplete="off"
                 class="w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-red/60 focus:outline-none focus:ring-2 focus:ring-brand-red/15"
                 placeholder="e.g. Toyota Vios" />
+              <datalist id="bf-car-list">${CAR_MODELS.map((c) => `<option value="${c.name}">${c.type}</option>`).join("")}</datalist>
             </div>
             <div>
               <label class="mb-1 block text-xs font-medium text-muted">Plate number</label>
@@ -1260,6 +1597,20 @@ function openBookingForm(date) {
                 placeholder="ABC 1234" />
             </div>
           </div>
+          <div>
+            <p class="mb-1.5 text-xs font-medium text-muted">Or tap a car</p>
+            <div class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+              ${CAR_MODELS.map((c) => `
+                <button type="button" data-car-chip="${c.name}" onclick="selectCarModel('${c.name}')"
+                  class="flex w-24 shrink-0 flex-col overflow-hidden rounded-lg border border-line/10 bg-line/5 text-left transition-colors hover:border-line/30">
+                  <span class="relative block h-14 w-full bg-line/5">
+                    <img src="${c.photo}" alt="" loading="lazy" referrerpolicy="no-referrer" class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()">
+                  </span>
+                  <span class="truncate px-1.5 py-1 text-[11px] font-medium text-ink">${c.name}</span>
+                </button>`).join("")}
+            </div>
+          </div>
+          <div id="bf-car-preview"></div>
           <div>
             <label class="mb-1 block text-xs font-medium text-muted">Appointment date *</label>
             <input required id="bf-date" type="date" value="${defaultDate}"
@@ -1398,9 +1749,10 @@ function renderSidebar() {
     const active = state.section === s.id;
     return `
     <button onclick="handleSectionNavClick('${s.id}')" title="${s.label}"
-      class="group flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+      class="group relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
         active ? "bg-brand-red/10 text-brand-red" : "text-muted hover:bg-line/5 hover:text-ink"
       } ${centerItem}">
+      ${active ? `<span class="led-red absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-full bg-brand-red"></span>` : ""}
       <i data-lucide="${s.icon}" class="h-4 w-4 shrink-0"></i>
       <span class="flex-1 truncate ${hideLabel}">${s.label}</span>
       ${badge > 0 ? `<span class="shrink-0 rounded-full ${active ? "bg-brand-red text-white" : "bg-brand-red/15 text-brand-red"} px-2 py-0.5 text-[11px] font-semibold ${hideLabel}">${badge}</span>` : ""}
@@ -1490,7 +1842,8 @@ function barTrendHtml(data, caption) {
         return `
         <div class="group flex h-full flex-1 flex-col items-center gap-2" title="${h.m}: ${h.pct}% of peak">
           <div class="flex w-full flex-1 items-end justify-center">
-            <div class="relative w-full max-w-[44px] rounded-t-md transition-colors ${isCurrent ? "bg-brand-red" : "bg-line/10 group-hover:bg-line/20"}" style="height:${h.pct}%">
+            <div class="relative w-full max-w-[44px]" style="height:${h.pct}%">
+              <div class="seg-v absolute inset-0 transition-colors ${isCurrent ? "bg-brand-red" : "bg-brand-amber/30 group-hover:bg-brand-amber/60"}" ${isCurrent ? 'style="filter:drop-shadow(0 0 6px rgb(230 57 70 / .7))"' : ""}></div>
               <span class="absolute -top-5 left-1/2 -translate-x-1/2 text-[11px] font-semibold tabular-nums ${isCurrent ? "text-ink" : "hidden text-muted group-hover:inline"}">${h.pct}%</span>
             </div>
           </div>
@@ -1539,7 +1892,7 @@ function renderOverviewSection() {
   const showFinancials = sectionsForRole(currentRole).some((s) => s.id === "financials");
   root.innerHTML = `
     <div id="filter-bar"></div>
-    <div id="kpi-header" class="grid grid-cols-2 gap-4 lg:grid-cols-4"></div>
+    <div id="kpi-header"></div>
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       ${overviewCard("Needs your attention", renderAttentionList())}
       ${overviewCard("Inquiry trend, last six months", barTrendHtml(INQUIRY_TREND, "Inquiry volume relative to this month's peak — updates as new channels report in."))}
@@ -1597,8 +1950,8 @@ function renderRevenueByChannel() {
         <span class="flex items-center gap-2 text-ink"><i data-lucide="${r.ch.icon}" class="h-3.5 w-3.5 shrink-0 text-brand-amber"></i><span class="truncate">${r.ch.name}</span></span>
         <span class="shrink-0 font-semibold tabular-nums text-ink">${peso(r.amount)}</span>
       </div>
-      <div class="h-2 w-full overflow-hidden rounded-full bg-line/10">
-        <div class="h-full rounded-full bg-brand-red" style="width:${r.pct}%"></div>
+      <div class="seg-h h-2.5 w-full overflow-hidden bg-line/10">
+        <div class="h-full bg-gradient-to-r from-brand-amber to-brand-red" style="width:${r.pct}%"></div>
       </div>
     </li>`).join("") + `</ul>`;
 }

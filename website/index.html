@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mr. Klin Trading and Services Corp. — Auto Detailing, Repair &amp; Paint in Taguig</title>
+<meta name="description" content="Mr. Klin Trading and Services Corp. — your one-stop shop in the South for auto detailing, nano ceramic coating, mechanical services, body repair and paint in Taguig City.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Inter:wght@400;500;600&display=swap">
+<script>
+  // Apply the saved theme before the page paints (avoids a flash of the wrong theme).
+  (function () {
+    var theme = 'dark';
+    try {
+      var saved = localStorage.getItem('mrklin-theme');
+      if (saved === 'dark' || saved === 'light') theme = saved;
+      else if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) theme = 'light';
+    } catch (e) {}
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+<style>
+  /* ---------- Theme tokens ---------- */
+  :root {
+    --accent: #FF5A1F;
+    --on-accent: #0B0D10;
+  }
+  [data-theme="dark"] {
+    --base: #0B0D10; --alt: #111418; --card: #181C22; --panel: #1E232B; --cell: #12151A;
+    --text: #FFFFFF; --muted: #A3A9B3; --body: #B8BDC6; --nav-link: #C9CDD4;
+    --line: rgba(255,255,255,0.08); --outline: rgba(255,255,255,0.24);
+    --ph-bg: #181C22; --ph-border: rgba(255,255,255,0.22);
+    --kicker: var(--accent);
+    --cer-bg: radial-gradient(ellipse at 50% 70%, #232A35 0%, #0B0D10 70%);
+    --glow: 0.10; --floor: 1; --car-shadow: 0.45;
+    --feat-bg: #1E232B; --feat-border: var(--accent);
+    color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --base: #FFFFFF; --alt: #F4F4F1; --card: #FFFFFF; --panel: #ECEDE9; --cell: #F7F7F4;
+    --text: #15181D; --muted: #5A616B; --body: #4A505A; --nav-link: #4A505A;
+    --line: #E3E3DE; --outline: rgba(21,24,29,0.28);
+    --ph-bg: #E9E9E4; --ph-border: #B9B9B2;
+    --kicker: #B93A0B;
+    --cer-bg: radial-gradient(ellipse at 50% 70%, #FFFFFF 0%, #E4E6E3 75%);
+    --glow: 0.14; --floor: 0.35; --car-shadow: 0.22;
+    --feat-bg: #15181D; --feat-border: rgba(255,255,255,0.14);
+    color-scheme: light;
+  }
+
+  /* ---------- Base ---------- */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--base);
+    color: var(--text);
+    transition: background-color .3s, color .3s;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--kicker); }
+  img, svg { display: block; }
+  .container { max-width: 1240px; margin: 0 auto; padding-inline: clamp(16px, 4vw, 48px); }
+  .section { padding-block: clamp(64px, 8vw, 112px); }
+  .bg-base { background: var(--base); }
+  .bg-alt { background: var(--alt); }
+  .display { font-family: 'Archivo', sans-serif; font-stretch: 112%; font-weight: 800; letter-spacing: -0.01em; }
+  .kicker { font-size: 13px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--kicker); }
+  h1, h2, h3, p { margin: 0; }
+  h2.title { font-size: clamp(32px, 4vw, 52px); line-height: 1.05; }
+  .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 48px; }
+  .section-head > div { flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .section-head > p { flex: 1 1 320px; max-width: 420px; font-size: 16px; line-height: 1.65; color: var(--muted); }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 22px;
+    border-radius: 999px; font-weight: 600; font-size: 15px; text-decoration: none; transition: transform .15s, opacity .15s;
+  }
+  .btn:hover { transform: translateY(-1px); }
+  .btn-primary { background: var(--accent); color: var(--on-accent); }
+  .btn-primary:hover { color: var(--on-accent); opacity: .92; }
+  .btn-ghost { border: 1px solid var(--outline); color: var(--text); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+  .btn-lg { min-height: 52px; padding: 0 26px; font-size: 16px; }
+
+  /* ---------- Header ---------- */
+  header.site {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--base) 88%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-block: 14px; }
+  .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
+  .brand-mark {
+    width: 44px; height: 44px; border-radius: 10px; background: var(--accent); color: var(--on-accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-size: 18px;
+  }
+  .brand-name { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-name strong { font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 800; font-size: 18px; letter-spacing: .02em; }
+  .brand-name span { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  nav.main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 28px; font-size: 15px; font-weight: 500; }
+  nav.main a { color: var(--nav-link); text-decoration: none; padding: 12px 0; }
+  nav.main a:hover, nav.main a.active { color: var(--text); }
+  .nav-actions { display: flex; align-items: center; gap: 10px; }
+  .theme-toggle {
+    width: 44px; height: 44px; border-radius: 999px; border: 1px solid var(--outline);
+    background: var(--card); color: var(--text); display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; padding: 0;
+  }
+  .theme-toggle:focus-visible, .btn:focus-visible, nav.main a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  [data-theme="dark"] .icon-moon, [data-theme="light"] .icon-sun { display: none; }
+
+  /* ---------- Hero ---------- */
+  .hero { position: relative; overflow: hidden; }
+  .hero-glow {
+    position: absolute; left: 50%; top: 58%; width: 1100px; height: 520px; transform: translate(-30%, -40%);
+    border-radius: 50%; background: var(--accent); opacity: var(--glow); filter: blur(120px); pointer-events: none;
+  }
+  .hero-row { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 48px; padding-top: clamp(48px, 8vw, 96px); padding-bottom: 40px; }
+  .hero-copy { flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 28px; }
+  .pill {
+    display: inline-flex; align-self: flex-start; align-items: center; gap: 10px; padding: 8px 14px;
+    border: 1px solid var(--outline); border-radius: 999px; font-size: 13px; color: var(--body);
+  }
+  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .hero h1 { font-size: clamp(42px, 6vw, 80px); line-height: .98; letter-spacing: -0.02em; }
+  .hero p.lead { max-width: 520px; font-size: 18px; line-height: 1.6; color: var(--body); }
+  .cta-row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .hero-art { flex: 1 1 520px; min-width: 0; }
+  .hero-art svg { width: 100%; height: auto; }
+  .floor { opacity: var(--floor); }
+
+  .stats {
+    position: relative; display: flex; flex-wrap: wrap; gap: 1px; margin-bottom: 64px;
+    background: var(--line); border: 1px solid var(--line); border-radius: 16px; overflow: hidden;
+  }
+  .stat { flex: 1 1 220px; background: var(--cell); padding: 24px 28px; display: flex; flex-direction: column; gap: 6px; }
+  .stat strong { font-family: 'Archivo', sans-serif; font-stretch: 112%; font-weight: 800; font-size: 32px; }
+  .stat span { font-size: 14px; color: var(--muted); }
+
+  /* ---------- Car cards ---------- */
+  #about { border-top: 1px solid var(--line); }
+  .grid { display: flex; flex-wrap: wrap; gap: 20px; }
+  .car-card { flex: 1 1 340px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; transition: transform .2s; }
+  .car-card:hover { transform: translateY(-3px); }
+  .car-art { background: var(--panel); padding: 28px 20px 8px; }
+  .car-art svg { width: 100%; height: auto; }
+  .car-shadow { opacity: var(--car-shadow); }
+  .car-info { padding: 20px 24px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .car-info h3 { font-family: 'Archivo', sans-serif; font-stretch: 112%; font-weight: 700; font-size: 20px; }
+  .car-info span { font-size: 14px; color: var(--muted); }
+  .car-info svg { color: var(--muted); flex: none; }
+
+  /* ---------- Services ---------- */
+  .service { flex: 1 1 220px; min-width: 0; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+  .service-icon { width: 52px; height: 52px; border-radius: 14px; background: #15181D; border: 1px solid var(--line); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+  .service h3 { font-family: 'Archivo', sans-serif; font-stretch: 108%; font-weight: 700; font-size: 20px; line-height: 1.2; }
+  .service ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: var(--body); }
+  .service li { display: flex; align-items: center; gap: 10px; }
+  .service li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+
+  /* ---------- Packages ---------- */
+  .package { flex: 1 1 250px; min-width: 0; border-radius: 20px; padding: 32px 28px; display: flex; flex-direction: column; gap: 20px; background: var(--card); color: var(--text); border: 1px solid var(--line); }
+  .package.featured { background: var(--feat-bg); color: #FFFFFF; border-color: var(--feat-border); }
+  .package .pk { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; opacity: .75; }
+  .package h3 { font-family: 'Archivo', sans-serif; font-stretch: 108%; font-weight: 700; font-size: 22px; }
+  .price { display: flex; flex-direction: column; gap: 2px; }
+  .price small { font-size: 13px; opacity: .75; }
+  .price strong { font-family: 'Archivo', sans-serif; font-stretch: 112%; font-weight: 800; font-size: 34px; letter-spacing: -0.01em; }
+  .package hr { border: 0; height: 1px; background: var(--line); margin: 0; }
+  .package.featured hr { background: rgba(255,255,255,0.14); }
+  .package ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 15px; line-height: 1.4; }
+  .package li { display: flex; align-items: flex-start; gap: 10px; }
+  .package li svg { flex: none; margin-top: 1px; }
+
+  /* ---------- Ceramic ---------- */
+  .ceramic-row { display: flex; flex-wrap: wrap; align-items: center; gap: 56px; }
+  .ceramic-art { flex: 1 1 480px; min-width: 0; background: var(--cer-bg); border: 1px solid var(--line); border-radius: 24px; padding: 48px 24px 24px; }
+  .ceramic-art svg { width: 100%; height: auto; }
+  .ceramic-copy { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+  .ceramic-copy p { font-size: 17px; line-height: 1.65; color: var(--body); }
+  .benefits { display: flex; flex-wrap: wrap; gap: 12px; }
+  .benefit { flex: 1 1 200px; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); font-size: 15px; }
+  .benefit svg { flex: none; color: var(--kicker); }
+
+  /* ---------- Our work ---------- */
+  .gallery { display: flex; flex-wrap: wrap; gap: 16px; }
+  .gallery figure { flex: 1 1 260px; min-width: 0; margin: 0; height: 240px; border-radius: 18px; overflow: hidden; }
+  .gallery img { width: 100%; height: 100%; object-fit: cover; }
+  /* Placeholder style — delete once real photos are in */
+  .gallery figure.placeholder { background: var(--ph-bg); border: 1.5px dashed var(--ph-border); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--muted); }
+  .gallery figcaption { font-size: 14px; font-weight: 500; }
+
+  /* ---------- Contact ---------- */
+  .contact-row { display: flex; flex-wrap: wrap; gap: 48px; }
+  .contact-copy { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+  .contact-copy p { font-size: 17px; line-height: 1.65; color: var(--body); }
+  .contact-cards { flex: 1 1 520px; min-width: 0; display: flex; flex-wrap: wrap; gap: 16px; }
+  .contact-card { flex: 1 1 240px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px; }
+  .contact-card .label { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  .contact-card a.num, .contact-card address { font-size: 17px; line-height: 1.5; color: var(--text); text-decoration: none; font-style: normal; padding: 4px 0; }
+  .contact-card a.num:hover { color: var(--kicker); }
+  .contact-card a.dir { font-size: 15px; font-weight: 600; text-decoration: none; padding: 6px 0; }
+
+  /* ---------- Footer ---------- */
+  footer.site { background: var(--alt); border-top: 1px solid var(--line); }
+  footer.site .container { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding-block: 28px; font-size: 14px; color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Shared SVG defs: paint shading + wheel -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.45"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
+    </linearGradient>
+    <linearGradient id="shadeStrong" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.6"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.5"/>
+    </linearGradient>
+    <radialGradient id="floorGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#000000" stop-opacity="0.8"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+    <g id="wheel">
+      <circle r="24" fill="#0E1116"/>
+      <circle r="14" fill="#BFC5CE"/>
+      <circle r="8" fill="#5B636F"/>
+      <circle r="3" fill="#E7EAEE"/>
+    </g>
+  </defs>
+</svg>
+
+<!-- ================= HEADER ================= -->
+<header class="site">
+  <div class="container nav-row">
+    <a href="#home" class="brand" aria-label="Mr. Klin — home">
+      <!-- Replace this badge with your logo: <img src="images/logo.png" alt="Mr. Klin" height="44"> -->
+      <div class="brand-mark" aria-hidden="true">MK</div>
+      <div class="brand-name">
+        <strong>MR. KLIN</strong>
+        <span>Trading &amp; Services Corp.</span>
+      </div>
+    </a>
+    <nav class="main" aria-label="Main">
+      <a href="#home" class="active">Home</a>
+      <a href="#about">About us</a>
+      <a href="#services">Services</a>
+      <a href="#work">Our Work</a>
+      <a href="#contact">Contact Us</a>
+    </nav>
+    <div class="nav-actions">
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch to light mode" title="Switch to light mode">
+        <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <a href="tel:09178805755" class="btn btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
+        Book a service
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+<!-- ================= HERO ================= -->
+<section id="home" class="hero bg-base">
+  <div class="hero-glow" aria-hidden="true"></div>
+  <div class="container hero-row">
+    <div class="hero-copy">
+      <div class="pill"><span class="dot"></span>Auto detailing · Repair · Paint · Maintenance</div>
+      <h1 class="display">Your one-stop shop in the South.</h1>
+      <p class="lead">From a showroom-grade detail to body repair, paint and preventive maintenance — Mr. Klin keeps every car in Taguig looking and running its best. We come to you, too.</p>
+      <div class="cta-row">
+        <a href="tel:09178805755" class="btn btn-primary btn-lg">Call 0917-880-5755</a>
+        <a href="#services" class="btn btn-ghost btn-lg">Explore services</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 400 170" role="img" aria-label="Illustration of a sports coupe">
+        <ellipse class="floor" cx="200" cy="152" rx="200" ry="14" fill="url(#floorGlow)"/>
+        <path d="M18,116 Q18,104 34,100 L120,92 Q160,64 200,60 L250,60 Q290,64 320,90 L368,98 Q386,102 386,114 L386,120 Q386,126 378,126 L332,126 A30,30 0 0 0 272,126 L128,126 A30,30 0 0 0 68,126 L26,126 Q18,126 18,116 Z" style="fill: var(--accent)"/>
+        <path d="M18,116 Q18,104 34,100 L120,92 Q160,64 200,60 L250,60 Q290,64 320,90 L368,98 Q386,102 386,114 L386,120 Q386,126 378,126 L332,126 A30,30 0 0 0 272,126 L128,126 A30,30 0 0 0 68,126 L26,126 Q18,126 18,116 Z" fill="url(#shade)"/>
+        <path d="M130,92 Q166,68 204,66 L238,66 L238,92 Z M246,66 L252,66 Q284,70 308,90 L246,92 Z" fill="#141A22"/>
+        <path d="M150,86 Q176,72 200,70" fill="none" stroke="#FFFFFF" opacity="0.35" stroke-width="2" stroke-linecap="round"/>
+        <path d="M36,106 L372,108" fill="none" stroke="#FFFFFF" opacity="0.3" stroke-width="1.5"/>
+        <rect x="370" y="102" width="14" height="6" rx="3" fill="#FFF4D6"/>
+        <rect x="18" y="104" width="10" height="6" rx="3" fill="#E2382F"/>
+        <use href="#wheel" x="98" y="126"/>
+        <use href="#wheel" x="302" y="126"/>
+      </svg>
+    </div>
+  </div>
+  <div class="container">
+    <div class="stats">
+      <div class="stat"><strong>100+</strong><span>Five-star customer reviews</span></div>
+      <div class="stat"><strong>Mobile</strong><span>Detailing at your home or office</span></div>
+      <div class="stat"><strong>5 in 1</strong><span>Detailing, coating, mechanical, body &amp; accessories</span></div>
+      <div class="stat"><strong>Taguig</strong><span>74 M.L Quezon St., Bagumbayan</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= EVERY KIND OF CAR ================= -->
+<section id="about" class="section bg-alt">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="kicker">Every kind of car</span>
+        <h2 class="title display">Sedan or van, daily driver or weekend toy — we treat it like our own.</h2>
+      </div>
+      <p>Pricing follows your vehicle's size, so you only pay for the car you bring. Not sure where yours fits? Call us and we'll quote it on the spot.</p>
+    </div>
+    <div class="grid">
+
+      <article class="car-card">
+        <div class="car-art">
+          <svg viewBox="0 0 400 165" role="img" aria-label="Pearl white sedan">
+            <ellipse class="car-shadow" cx="200" cy="151" rx="186" ry="7" fill="#000"/>
+            <path d="M20,118 L22,100 Q24,90 40,88 L110,84 Q140,58 170,50 L250,48 Q280,50 305,80 L360,88 Q382,92 384,106 L384,120 Q384,126 376,126 L330,126 A30,30 0 0 0 270,126 L130,126 A30,30 0 0 0 70,126 L28,126 Q20,126 20,118 Z" fill="#ECEEF1"/>
+            <path d="M20,118 L22,100 Q24,90 40,88 L110,84 Q140,58 170,50 L250,48 Q280,50 305,80 L360,88 Q382,92 384,106 L384,120 Q384,126 376,126 L330,126 A30,30 0 0 0 270,126 L130,126 A30,30 0 0 0 70,126 L28,126 Q20,126 20,118 Z" fill="url(#shade)"/>
+            <path d="M118,84 Q144,62 172,56 L208,55 L208,84 Z M216,55 L248,54 Q272,56 292,82 L216,84 Z" fill="#141A22"/>
+            <path d="M40,96 L376,96" fill="none" stroke="#FFF" opacity="0.3" stroke-width="1.5"/>
+            <rect x="370" y="96" width="12" height="6" rx="3" fill="#FFF4D6"/>
+            <rect x="21" y="98" width="8" height="7" rx="2" fill="#E2382F"/>
+            <use href="#wheel" x="100" y="126"/><use href="#wheel" x="300" y="126"/>
+          </svg>
+        </div>
+        <div class="car-info"><div><h3>Sedans</h3><span>Interior detail from ₱4,000</span></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </article>
+
+      <article class="car-card">
+        <div class="car-art">
+          <svg viewBox="0 0 400 165" role="img" aria-label="Crimson hatchback">
+            <ellipse class="car-shadow" cx="200" cy="151" rx="186" ry="7" fill="#000"/>
+            <path d="M40,118 L42,72 Q44,56 64,54 L190,50 Q220,52 250,78 L330,90 Q356,94 358,108 L358,120 Q358,126 350,126 L320,126 A30,30 0 0 0 260,126 L140,126 A30,30 0 0 0 80,126 L48,126 Q40,126 40,118 Z" fill="#D2303C"/>
+            <path d="M40,118 L42,72 Q44,56 64,54 L190,50 Q220,52 250,78 L330,90 Q356,94 358,108 L358,120 Q358,126 350,126 L320,126 A30,30 0 0 0 260,126 L140,126 A30,30 0 0 0 80,126 L48,126 Q40,126 40,118 Z" fill="url(#shade)"/>
+            <path d="M56,82 L58,64 Q60,60 70,60 L130,58 L130,82 Z M138,58 L188,57 Q214,60 238,82 L138,82 Z" fill="#141A22"/>
+            <path d="M46,92 L352,98" fill="none" stroke="#FFF" opacity="0.3" stroke-width="1.5"/>
+            <rect x="344" y="98" width="12" height="6" rx="3" fill="#FFF4D6"/>
+            <rect x="41" y="72" width="8" height="7" rx="2" fill="#E2382F"/>
+            <use href="#wheel" x="110" y="126"/><use href="#wheel" x="290" y="126"/>
+          </svg>
+        </div>
+        <div class="car-info"><div><h3>Hatchbacks</h3><span>Interior detail from ₱4,000</span></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </article>
+
+      <article class="car-card">
+        <div class="car-art">
+          <svg viewBox="0 0 400 165" role="img" aria-label="Graphite SUV">
+            <ellipse class="car-shadow" cx="200" cy="151" rx="186" ry="7" fill="#000"/>
+            <path d="M24,118 L24,62 Q26,44 48,42 L250,40 Q270,40 288,60 L304,82 L360,88 Q380,90 382,106 L382,120 Q382,126 374,126 L332,126 A30,30 0 0 0 272,126 L132,126 A30,30 0 0 0 72,126 L32,126 Q24,126 24,118 Z" fill="#4E5663"/>
+            <path d="M24,118 L24,62 Q26,44 48,42 L250,40 Q270,40 288,60 L304,82 L360,88 Q380,90 382,106 L382,120 Q382,126 374,126 L332,126 A30,30 0 0 0 272,126 L132,126 A30,30 0 0 0 72,126 L32,126 Q24,126 24,118 Z" fill="url(#shade)"/>
+            <path d="M40,82 L40,58 Q42,50 52,50 L120,49 L120,82 Z M128,49 L196,48 L196,82 Z M204,48 L248,48 Q262,48 274,64 L286,82 L204,82 Z" fill="#141A22"/>
+            <path d="M28,94 L376,96" fill="none" stroke="#FFF" opacity="0.3" stroke-width="1.5"/>
+            <rect x="368" y="94" width="12" height="6" rx="3" fill="#FFF4D6"/>
+            <rect x="25" y="68" width="8" height="7" rx="2" fill="#E2382F"/>
+            <use href="#wheel" x="102" y="126"/><use href="#wheel" x="302" y="126"/>
+          </svg>
+        </div>
+        <div class="car-info"><div><h3>SUVs &amp; crossovers</h3><span>Full detailing, coating &amp; repair</span></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </article>
+
+      <article class="car-card">
+        <div class="car-art">
+          <svg viewBox="0 0 400 165" role="img" aria-label="Deep blue pickup truck">
+            <ellipse class="car-shadow" cx="200" cy="151" rx="186" ry="7" fill="#000"/>
+            <path d="M18,118 L18,80 L170,80 L172,52 Q174,42 188,42 L250,42 Q266,42 280,60 L298,84 L362,90 Q382,92 384,106 L384,120 Q384,126 376,126 L334,126 A30,30 0 0 0 274,126 L134,126 A30,30 0 0 0 74,126 L26,126 Q18,126 18,118 Z" fill="#2C5FC9"/>
+            <path d="M18,118 L18,80 L170,80 L172,52 Q174,42 188,42 L250,42 Q266,42 280,60 L298,84 L362,90 Q382,92 384,106 L384,120 Q384,126 376,126 L334,126 A30,30 0 0 0 274,126 L134,126 A30,30 0 0 0 74,126 L26,126 Q18,126 18,118 Z" fill="url(#shade)"/>
+            <path d="M184,82 L184,54 Q186,50 192,50 L224,50 L224,82 Z M232,50 L248,50 Q260,50 270,62 L284,82 L232,82 Z" fill="#141A22"/>
+            <path d="M22,90 L164,90 M176,96 L378,98" fill="none" stroke="#FFF" opacity="0.3" stroke-width="1.5"/>
+            <rect x="370" y="96" width="12" height="6" rx="3" fill="#FFF4D6"/>
+            <rect x="19" y="84" width="8" height="7" rx="2" fill="#E2382F"/>
+            <use href="#wheel" x="104" y="126"/><use href="#wheel" x="304" y="126"/>
+          </svg>
+        </div>
+        <div class="car-info"><div><h3>Pickups</h3><span>Underchassis &amp; rustproofing</span></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </article>
+
+      <article class="car-card">
+        <div class="car-art">
+          <svg viewBox="0 0 400 165" role="img" aria-label="Silver van">
+            <ellipse class="car-shadow" cx="200" cy="151" rx="186" ry="7" fill="#000"/>
+            <path d="M20,118 L20,46 Q22,30 44,30 L280,30 Q300,30 314,50 L340,82 L366,88 Q382,92 382,106 L382,120 Q382,126 374,126 L334,126 A30,30 0 0 0 274,126 L130,126 A30,30 0 0 0 70,126 L28,126 Q20,126 20,118 Z" fill="#BFC4CB"/>
+            <path d="M20,118 L20,46 Q22,30 44,30 L280,30 Q300,30 314,50 L340,82 L366,88 Q382,92 382,106 L382,120 Q382,126 374,126 L334,126 A30,30 0 0 0 274,126 L130,126 A30,30 0 0 0 70,126 L28,126 Q20,126 20,118 Z" fill="url(#shade)"/>
+            <path d="M36,76 L36,46 Q36,40 44,40 L120,40 L120,76 Z M128,40 L210,40 L210,76 Z M218,40 L282,40 Q294,40 304,54 L320,78 L218,78 Z" fill="#141A22"/>
+            <path d="M24,92 L376,94" fill="none" stroke="#FFF" opacity="0.3" stroke-width="1.5"/>
+            <rect x="368" y="94" width="12" height="6" rx="3" fill="#FFF4D6"/>
+            <rect x="21" y="58" width="8" height="7" rx="2" fill="#E2382F"/>
+            <use href="#wheel" x="100" y="126"/><use href="#wheel" x="304" y="126"/>
+          </svg>
+        </div>
+        <div class="car-info"><div><h3>Vans &amp; MPVs</h3><span>Interior detail up to ₱6,000</span></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </article>
+
+      <article class="car-card">
+        <div class="car-art">
+          <svg viewBox="0 0 400 165" role="img" aria-label="Yellow sports coupe">
+            <ellipse class="car-shadow" cx="200" cy="151" rx="186" ry="7" fill="#000"/>
+            <path d="M18,116 Q18,104 34,100 L120,92 Q160,64 200,60 L250,60 Q290,64 320,90 L368,98 Q386,102 386,114 L386,120 Q386,126 378,126 L332,126 A30,30 0 0 0 272,126 L128,126 A30,30 0 0 0 68,126 L26,126 Q18,126 18,116 Z" fill="#F2B705"/>
+            <path d="M18,116 Q18,104 34,100 L120,92 Q160,64 200,60 L250,60 Q290,64 320,90 L368,98 Q386,102 386,114 L386,120 Q386,126 378,126 L332,126 A30,30 0 0 0 272,126 L128,126 A30,30 0 0 0 68,126 L26,126 Q18,126 18,116 Z" fill="url(#shade)"/>
+            <path d="M130,92 Q166,68 204,66 L238,66 L238,92 Z M246,66 L252,66 Q284,70 308,90 L246,92 Z" fill="#141A22"/>
+            <path d="M36,106 L372,108" fill="none" stroke="#FFF" opacity="0.3" stroke-width="1.5"/>
+            <rect x="372" y="102" width="12" height="6" rx="3" fill="#FFF4D6"/>
+            <rect x="19" y="104" width="8" height="7" rx="2" fill="#E2382F"/>
+            <use href="#wheel" x="98" y="126"/><use href="#wheel" x="302" y="126"/>
+          </svg>
+        </div>
+        <div class="car-info"><div><h3>Sports &amp; coupes</h3><span>PPF, tint &amp; ceramic coating</span></div>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= SERVICES ================= -->
+<section id="services" class="section bg-base">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="kicker">Our services</span>
+        <h2 class="title display">Everything your car needs, under one roof.</h2>
+      </div>
+    </div>
+    <div class="grid">
+      <article class="service">
+        <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div>
+        <h3>Auto Detailing</h3>
+        <ul><li>Interior</li><li>Exterior</li><li>Engine</li></ul>
+      </article>
+      <article class="service">
+        <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3zM9 12l2 2 4-4"/></svg></div>
+        <h3>Nano Ceramic</h3>
+        <ul><li>Tint film installation</li><li>Nano ceramic coating</li><li>PPF protection</li></ul>
+      </article>
+      <article class="service">
+        <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8 6.2 21l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></div>
+        <h3>Mechanical Services</h3>
+        <ul><li>Preventive maintenance (PMS)</li><li>Battery services</li><li>Tire services</li></ul>
+      </article>
+      <article class="service">
+        <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h7M14 4l6 6-9 9H5v-6zM12 6l6 6"/></svg></div>
+        <h3>Body Repair &amp; Paint</h3>
+        <ul><li>Dent repair</li><li>Scratch removal</li><li>Professional painting</li></ul>
+      </article>
+      <article class="service">
+        <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></svg></div>
+        <h3>Car Accessories</h3>
+        <ul><li>Upholstery</li><li>Sounds &amp; lights</li><li>Central lock &amp; dashcam</li></ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PACKAGES ================= -->
+<section id="packages" class="section bg-alt">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="kicker">Detailing packages</span>
+        <h2 class="title display">Clear prices. Spotless results.</h2>
+      </div>
+      <p>Prices may vary by vehicle and service. Deep shampooing or excessive dirt may incur additional fees.</p>
+    </div>
+    <div class="grid">
+      <article class="package featured">
+        <span class="pk">Quick refresh</span>
+        <h3>Auto Spa Package</h3>
+        <div class="price"><small>Package price</small><strong>₱2,250–2,930</strong></div>
+        <hr>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Wash</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Asphalt removal</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Machine wax</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Engine wash</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Hyperdressing</li>
+        </ul>
+      </article>
+      <article class="package">
+        <span class="pk">Protection</span>
+        <h3>Auto Detailing</h3>
+        <div class="price"><small>Starts at</small><strong>₱1,800</strong></div>
+        <hr>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Rust &amp; corrosion prevention</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Chassis protection</li>
+        </ul>
+      </article>
+      <article class="package">
+        <span class="pk">Cabin</span>
+        <h3>Interior Detail</h3>
+        <div class="price"><small>Sedan / hatchback to van</small><strong>₱4,000–6,000</strong></div>
+        <hr>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Priced by vehicle size</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Optional carpet dismantle: ₱5,500–7,500</li>
+        </ul>
+      </article>
+      <article class="package">
+        <span class="pk">Paint &amp; body</span>
+        <h3>Exterior Detail</h3>
+        <div class="price"><small>Depending on vehicle</small><strong>₱4,000–9,000</strong></div>
+        <hr>
+        <ul>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Full exterior treatment</li>
+          <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Priced by vehicle size</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CERAMIC ================= -->
+<section id="ceramic" class="section bg-base">
+  <div class="container ceramic-row">
+    <div class="ceramic-art">
+      <svg viewBox="0 0 400 165" role="img" aria-label="Silver sedan with water beading on its ceramic-coated paint">
+        <ellipse class="car-shadow" cx="200" cy="151" rx="190" ry="8" fill="#000"/>
+        <path d="M20,118 L22,100 Q24,90 40,88 L110,84 Q140,58 170,50 L250,48 Q280,50 305,80 L360,88 Q382,92 384,106 L384,120 Q384,126 376,126 L330,126 A30,30 0 0 0 270,126 L130,126 A30,30 0 0 0 70,126 L28,126 Q20,126 20,118 Z" fill="#B9BFC8"/>
+        <path d="M20,118 L22,100 Q24,90 40,88 L110,84 Q140,58 170,50 L250,48 Q280,50 305,80 L360,88 Q382,92 384,106 L384,120 Q384,126 376,126 L330,126 A30,30 0 0 0 270,126 L130,126 A30,30 0 0 0 70,126 L28,126 Q20,126 20,118 Z" fill="url(#shadeStrong)"/>
+        <path d="M118,84 Q144,62 172,56 L208,55 L208,84 Z M216,55 L248,54 Q272,56 292,82 L216,84 Z" fill="#141A22"/>
+        <path d="M40,96 L376,96" fill="none" stroke="#FFF" opacity="0.5" stroke-width="1.5"/>
+        <g fill="#FFF">
+          <circle cx="182" cy="51" r="2.4" opacity=".85"/><circle cx="200" cy="50" r="1.6" opacity=".8"/>
+          <circle cx="222" cy="49.5" r="2.8" opacity=".85"/><circle cx="240" cy="50" r="1.4" opacity=".75"/>
+          <circle cx="318" cy="85" r="2.2" opacity=".85"/><circle cx="334" cy="87" r="1.5" opacity=".8"/>
+          <circle cx="350" cy="89" r="2.6" opacity=".85"/><circle cx="68" cy="88" r="1.8" opacity=".8"/>
+          <circle cx="88" cy="86.5" r="2.4" opacity=".85"/>
+        </g>
+        <rect x="370" y="96" width="12" height="6" rx="3" fill="#FFF4D6"/>
+        <rect x="21" y="98" width="8" height="7" rx="2" fill="#E2382F"/>
+        <use href="#wheel" x="100" y="126"/><use href="#wheel" x="300" y="126"/>
+      </svg>
+    </div>
+    <div class="ceramic-copy">
+      <span class="kicker">Nano ceramic coating</span>
+      <h2 class="title display">A glass-hard shield that makes rain roll right off.</h2>
+      <p>Our nano-ceramic coating bonds to your paint to form a lasting protective layer — deeper gloss, easier washes, and paint that stays new for longer.</p>
+      <div class="benefits">
+        <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/></svg>UV &amp; oxidation protection</div>
+        <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/></svg>Acid rain &amp; bird droppings</div>
+        <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/></svg>Road grime resistance</div>
+        <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/></svg>Fewer scratches &amp; swirls</div>
+        <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/></svg>Deeper, lasting gloss</div>
+        <div class="benefit"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3z"/></svg>Water-repellent finish</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OUR WORK ================= -->
+<section id="work" class="section bg-alt">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <span class="kicker">Our work</span>
+        <h2 class="title display">Fresh out of the bay.</h2>
+      </div>
+      <a href="https://www.instagram.com/mr.klintrading" class="btn btn-ghost" target="_blank" rel="noopener">See more on Instagram</a>
+    </div>
+    <!--
+      TO ADD YOUR REAL PHOTOS: put them in an "images" folder next to this file,
+      then replace each placeholder <figure> with:
+        <figure><img src="images/work-1.jpg" alt="Short description of the job" loading="lazy"></figure>
+    -->
+    <div class="gallery">
+      <figure class="placeholder">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <figcaption>Project photo 1</figcaption>
+      </figure>
+      <figure class="placeholder">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <figcaption>Project photo 2</figcaption>
+      </figure>
+      <figure class="placeholder">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <figcaption>Project photo 3</figcaption>
+      </figure>
+      <figure class="placeholder">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        <figcaption>Project photo 4</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTACT ================= -->
+<section id="contact" class="section bg-base">
+  <div class="container contact-row">
+    <div class="contact-copy">
+      <span class="kicker">Contact us</span>
+      <h2 class="title display">Bring it in — or we'll come to you.</h2>
+      <p>Call or message us to book a detail, a repair or a mobile service at your place.</p>
+      <div class="cta-row">
+        <a href="https://www.facebook.com/mrklintradingandservicescorp" class="btn btn-ghost" target="_blank" rel="noopener">Facebook</a>
+        <a href="https://www.instagram.com/mr.klintrading" class="btn btn-ghost" target="_blank" rel="noopener">Instagram</a>
+      </div>
+    </div>
+    <div class="contact-cards">
+      <div class="contact-card">
+        <span class="label">Visit</span>
+        <address>74 M.L Quezon St., Bagumbayan, Taguig City</address>
+        <a class="dir" href="https://maps.google.com/?q=Mr.+Klin+Trading+and+Services+Corporation+Taguig" target="_blank" rel="noopener">Get directions →</a>
+      </div>
+      <div class="contact-card">
+        <span class="label">Mobile (Globe)</span>
+        <a class="num" href="tel:09178805755">0917-880-5755</a>
+        <a class="num" href="tel:09176771161">0917-677-1161</a>
+      </div>
+      <div class="contact-card">
+        <span class="label">Landline</span>
+        <a class="num" href="tel:0288072457">02-8807-2457</a>
+      </div>
+      <div class="contact-card">
+        <span class="label">Sunday line</span>
+        <a class="num" href="tel:09338667408">0933-866-7408</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site">
+  <div class="container">
+    <span>© <span id="year">2026</span> Mr. Klin Trading and Services Corp.</span>
+    <span>Your one-stop shop in the South · Taguig City</span>
+  </div>
+</footer>
+
+<script>
+  // Dark / light mode toggle (remembers the visitor's choice)
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    function sync() {
+      var label = root.getAttribute('data-theme') === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+      btn.setAttribute('aria-label', label);
+      btn.setAttribute('title', label);
+    }
+    btn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('mrklin-theme', next); } catch (e) {}
+      sync();
+    });
+    sync();
+
+    // Highlight the nav link for the section on screen
+    var links = document.querySelectorAll('nav.main a');
+    var map = { home: 0, about: 1, services: 2, packages: 2, ceramic: 2, work: 3, contact: 4 };
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting && map[e.target.id] !== undefined) {
+            links.forEach(function (l) { l.classList.remove('active'); });
+            links[map[e.target.id]].classList.add('active');
+          }
+        });
+      }, { rootMargin: '-45% 0px -50% 0px' });
+      document.querySelectorAll('main section[id]').forEach(function (s) { io.observe(s); });
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+  })();
+</script>
+</body>
+</html>
