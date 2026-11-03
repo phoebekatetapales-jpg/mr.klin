@@ -355,7 +355,8 @@ const STATUS_STYLES = {
   Scheduled: "bg-line/10 text-muted", Sent: "bg-line/10 text-muted",
   Overdue: "bg-brand-red/15 text-brand-red", Onboarded: "bg-brand-amber/15 text-brand-amber",
   Paid: "bg-brand-amber/15 text-brand-amber", Pending: "bg-line/10 text-muted",
-  Refunded: "bg-line/10 text-muted",
+  Refunded: "bg-line/10 text-muted", Confirmed: "bg-brand-amber/15 text-brand-amber",
+  Cancelled: "bg-brand-red/15 text-brand-red",
 };
 
 const KPIS = [
@@ -538,12 +539,12 @@ function buildNotifications() {
   }
 
   if (sections.includes("bookings")) {
-    loadWalkinBookings().filter((b) => b.status && b.status !== "Completed").forEach((b) => {
+    loadAllBookings().filter((b) => b.status && b.status !== "Completed" && b.status !== "Cancelled").forEach((b) => {
       const id = `book-${b.id}`;
       items.push({
         id,
         icon: "car",
-        title: `${b.vehicle || "Walk-in"} — ${b.service || "Service"}`,
+        title: `${b.source === "website" ? "Website booking: " : ""}${b.vehicle || "Walk-in"} — ${b.service || "Service"}`,
         status: b.status,
         onclick: `markNotificationRead('${id}'); closeNotifications()`,
       });
@@ -685,8 +686,61 @@ function getCustomerKey(name, phone) {
   return normalizePhone(phone) || (name || "").trim().toLowerCase();
 }
 function getDisplayRecentItems(channel) {
-  if (channel.id !== "walkin") return channel.recentItems;
-  return [...loadWalkinBookings(), ...channel.recentItems];
+  if (channel.id === "walkin") return [...loadWalkinBookings(), ...channel.recentItems];
+  if (channel.id === "web") return [...onlineBookings, ...channel.recentItems];
+  return channel.recentItems;
+}
+
+// Bookings made on the public website are stored online (see api/bookings.js)
+// so every device sees them. They're merged with this browser's walk-ins.
+const BOOKINGS_API = "/api/bookings";
+const BOOKINGS_POLL_MS = 60000;
+const ONLINE_STATUSES = ["Booked", "Confirmed", "In progress", "Completed", "Cancelled"];
+let onlineBookings = [];
+let onlineBookingsSnapshot = "";
+
+function escapeHtml(value) {
+  return String(value == null ? "" : value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+// Shape a website booking like a walk-in record; every field is escaped
+// because it was typed by a member of the public and is rendered as HTML.
+function toDashboardBooking(raw) {
+  const services = (raw.services || []).join(", ");
+  const vehicle = raw.vehicle || raw.vehicleType || "";
+  return {
+    id: escapeHtml(raw.id),
+    source: "website",
+    title: escapeHtml(`Website booking — ${services}`),
+    sub: escapeHtml(`${vehicle}${raw.plate ? " · Plate " + raw.plate : ""} · Owner: ${raw.ownerName} · ${formatDateKey(raw.date)} ${raw.slot}${raw.location && raw.location !== "At the shop" ? " · " + raw.location : ""}${raw.notes ? " · " + raw.notes : ""}`),
+    status: ONLINE_STATUSES.includes(raw.status) ? raw.status : "Booked",
+    time: escapeHtml(`${raw.slot} · Website`),
+    date: /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : todayKey(),
+    ownerName: escapeHtml(raw.ownerName),
+    phone: escapeHtml(raw.phone),
+    vehicle: escapeHtml(vehicle),
+    plate: escapeHtml(raw.plate),
+    service: escapeHtml(services),
+    estimate: escapeHtml(raw.estimate),
+    notes: escapeHtml(raw.notes),
+    location: escapeHtml(raw.location),
+  };
+}
+async function fetchOnlineBookings() {
+  try {
+    const res = await fetch(BOOKINGS_API, { cache: "no-store" });
+    if (!res.ok) return;
+    const data = await res.json();
+    const snapshot = JSON.stringify(data.bookings || []);
+    if (snapshot === onlineBookingsSnapshot) return;
+    onlineBookingsSnapshot = snapshot;
+    onlineBookings = (data.bookings || []).map(toDashboardBooking);
+    if (currentRole) renderAll();
+  } catch {
+    // Offline or the database isn't connected yet; walk-ins keep working.
+  }
+}
+function loadAllBookings() {
+  return [...onlineBookings, ...loadWalkinBookings()];
 }
 
 // ---------------------------------------------------------------------------
@@ -843,6 +897,8 @@ function startApp(role) {
   notificationsOpen = false;
   document.getElementById("app-root").classList.remove("hidden");
   renderAll();
+  fetchOnlineBookings();
+  if (!startApp.polling) startApp.polling = setInterval(fetchOnlineBookings, BOOKINGS_POLL_MS);
 }
 
 // ---------------------------------------------------------------------------
@@ -991,7 +1047,7 @@ function renderBookingsSection() {
     count: getDisplayRecentItems(ch).length,
   }));
   const totalBookings = bookingCounts.reduce((sum, c) => sum + c.count, 0);
-  const allVehicles = loadWalkinBookings();
+  const allVehicles = loadAllBookings();
   const selectedDay = bookingCalendar.selected;
   const vehicles = selectedDay ? allVehicles.filter((v) => bookingDateKey(v) === selectedDay) : allVehicles;
 
@@ -1020,7 +1076,7 @@ function renderBookingsSection() {
     </div>
     <div>
       <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">Unit (vehicle) information — ${selectedDay ? formatDateKey(selectedDay) : "all walk-in bookings"}</p>
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">Unit (vehicle) information — ${selectedDay ? formatDateKey(selectedDay) : "all bookings"}</p>
         ${selectedDay ? `<button onclick="selectBookingDay('${selectedDay}')" class="inline-flex items-center gap-1 rounded-lg border border-line/10 px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:border-line/20 hover:bg-line/5 hover:text-ink"><i data-lucide="x" class="h-3 w-3"></i> Show all days</button>` : ""}
       </div>
       <div class="overflow-x-auto rounded-xl border border-line/10 bg-panel shadow-sm shadow-black/5">
@@ -1055,8 +1111,13 @@ function renderBookingsSection() {
                   </div>
                 </td>
                 <td class="whitespace-nowrap px-4 py-3 text-muted">${v.plate || "—"}</td>
-                <td class="whitespace-nowrap px-4 py-3 text-muted">${v.service || "—"}</td>
-                <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
+                <td class="px-4 py-3 text-muted">
+                  <p class="whitespace-nowrap">${v.service || "—"}</p>
+                  ${v.estimate ? `<p class="mt-0.5 text-[11px] text-muted">Est. ${v.estimate}</p>` : ""}
+                  ${v.location && v.location !== "At the shop" ? `<p class="mt-0.5 text-[11px] text-muted">${v.location}</p>` : ""}
+                  ${v.notes ? `<p class="mt-0.5 max-w-[260px] text-[11px] text-muted">Note: ${v.notes}</p>` : ""}
+                </td>
+                <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.source === "website" ? `<span class="inline-flex items-center gap-1"><i data-lucide="globe" class="h-3.5 w-3.5"></i> Website</span>` : v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
                 <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
                 <td class="whitespace-nowrap px-4 py-3">
                   <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-line/10 text-muted"}">${v.status || "Booked"}</span>
@@ -1067,14 +1128,31 @@ function renderBookingsSection() {
                     : `<button onclick="markWalkinDone('${v.id}')" class="rounded-lg border border-brand-amber/40 px-2 py-1 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark as done</button>`}
                 </td>
               </tr>`).join("") : `
-              <tr><td colspan="10" class="px-4 py-6 text-center text-muted">${selectedDay ? "No units booked for this day." : "No walk-in vehicle records yet."}</td></tr>`}
+              <tr><td colspan="10" class="px-4 py-6 text-center text-muted">${selectedDay ? "No units booked for this day." : "No bookings yet."}</td></tr>`}
           </tbody>
         </table>
       </div>
     </div>`;
 }
 
-function markWalkinDone(id) {
+async function markWalkinDone(id) {
+  const online = onlineBookings.find((b) => b.id === id);
+  if (online) {
+    try {
+      const res = await fetch(BOOKINGS_API, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "Completed" }),
+      });
+      if (!res.ok) throw new Error();
+      online.status = "Completed";
+      onlineBookingsSnapshot = ""; // pick up the saved copy on the next poll
+      renderAll();
+    } catch {
+      alert("Couldn't update this website booking. Check your internet connection and try again.");
+    }
+    return;
+  }
   const bookings = loadWalkinBookings();
   const booking = bookings.find((b) => b.id === id);
   if (!booking) return;
