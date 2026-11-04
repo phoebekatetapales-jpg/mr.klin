@@ -442,7 +442,6 @@ const state = { timeframe: "today", serviceType: "all", section: "overview", tra
 // User Access; Employee gets just their booking queue.
 const ALL_SECTIONS = [
   { id: "overview", label: "Overview", icon: "layout-dashboard", description: "What needs attention today, and how every customer channel is trending." },
-  { id: "services", label: "Services", icon: "wrench", description: "Browse channels by service type — mobile detailing on the road, or in-shop appointments at the counter." },
   { id: "financials", label: "Financials", icon: "wallet", description: "Revenue, transactions, and outstanding invoices across every channel." },
   { id: "access", label: "User Access", icon: "shield", description: "Who can sign in, which pages each role can reach, and password resets." },
   { id: "bookings", label: "Bookings", icon: "clipboard-list", description: "Booking counts and vehicle details for walk-in customers." },
@@ -754,8 +753,8 @@ function loadAllBookings() {
 // ---------------------------------------------------------------------------
 
 const ACCOUNTS = {
-  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "services", "bookings"] },
-  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "services", "financials", "access"] },
+  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "bookings"] },
+  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "financials", "access"] },
   employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings"] },
 };
 const SESSION_KEY = "mrklin_session_v1";
@@ -1977,7 +1976,7 @@ function renderOverviewSection() {
     </div>
     ${showFinancials ? renderFinancialSnapshot() : ""}
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-      ${overviewCard("Latest activity", renderLatestActivityList(), `<button onclick="setSection('services')" class="rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-line/20 hover:bg-line/5 hover:text-ink">Open all</button>`)}
+      ${overviewCard("Latest activity", renderLatestActivityList())}
       ${overviewCard("Mobile fleet status", renderFleetStatusList(), `<button onclick="openModal('mobile')" class="rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-line/20 hover:bg-line/5 hover:text-ink">Manage</button>`)}
     </div>`;
   renderKPIs();
