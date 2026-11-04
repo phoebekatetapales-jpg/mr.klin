@@ -445,6 +445,7 @@ const ALL_SECTIONS = [
   { id: "sales", label: "Sales", icon: "shopping-cart", description: "What sold, how customers paid, and which services bring in the most." },
   { id: "financials", label: "Financials", icon: "wallet", description: "Revenue, transactions, and outstanding invoices across every channel." },
   { id: "stocks", label: "Stocks", icon: "package", description: "Cleaning supplies and materials on hand, with low-stock alerts for reordering." },
+  { id: "inventory", label: "Inventory", icon: "warehouse", description: "Equipment and assets the business owns — where each one is, its condition, and when it was last serviced." },
   { id: "bookings", label: "Bookings", icon: "clipboard-list", description: "Booking counts and vehicle details for walk-in customers." },
   { id: "access", label: "User Access", icon: "shield", description: "Who can sign in, which pages each role can reach, and password resets." },
   { id: "settings", label: "Settings", icon: "settings", description: "Business details, appearance, and data stored in this browser." },
@@ -756,8 +757,8 @@ function loadAllBookings() {
 // ---------------------------------------------------------------------------
 
 const ACCOUNTS = {
-  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "sales", "financials", "stocks", "bookings", "settings"] },
-  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "sales", "financials", "stocks", "access", "settings"] },
+  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookings", "settings"] },
+  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "access", "settings"] },
   employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings"] },
 };
 const SESSION_KEY = "mrklin_session_v1";
@@ -1824,9 +1825,10 @@ function renderSidebar() {
 
   const overdueInvoiceCount = INVOICES.filter((i) => i.status === "Overdue").length;
   const lowStockCount = loadStock().filter((s) => stockStatus(s) !== "In stock").length;
+  const equipmentIssueCount = loadEquipment().filter((e) => e.condition !== "Good").length;
   const navSections = sectionsForRole(currentRole);
   const sectionsHtml = navSections.map((s) => {
-    const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : s.id === "stocks" ? lowStockCount : 0;
+    const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : s.id === "stocks" ? lowStockCount : s.id === "inventory" ? equipmentIssueCount : 0;
     const active = state.section === s.id;
     return `
     <button onclick="handleSectionNavClick('${s.id}')" title="${s.label}"
@@ -2397,6 +2399,178 @@ function renderStocksSection() {
 }
 
 // ---------------------------------------------------------------------------
+// Inventory — equipment and assets (not consumables; those live in Stocks).
+// Kept in localStorage like the stock list.
+// ---------------------------------------------------------------------------
+
+const EQUIPMENT_KEY = "mrklin_equipment_v1";
+const EQUIPMENT_CONDITIONS = ["Good", "Needs repair", "Out of service"];
+const EQUIPMENT_CONDITION_STYLES = {
+  Good: "bg-brand-amber/15 text-brand-amber",
+  "Needs repair": "bg-line/10 text-muted",
+  "Out of service": "bg-brand-red/15 text-brand-red",
+};
+const DEFAULT_EQUIPMENT = [
+  { id: "eq-1", name: "Pressure washer", category: "Washing", location: "Shop — Bay 1", condition: "Good", lastService: "2026-09-15" },
+  { id: "eq-2", name: "Pressure washer", category: "Washing", location: "Van 1", condition: "Good", lastService: "2026-08-02" },
+  { id: "eq-3", name: "Wet/dry vacuum", category: "Interior", location: "Shop — Bay 2", condition: "Needs repair", lastService: "2026-05-20" },
+  { id: "eq-4", name: "Dual-action polisher", category: "Finishing", location: "Shop — Bay 1", condition: "Good", lastService: "2026-10-01" },
+  { id: "eq-5", name: "Foam cannon", category: "Washing", location: "Van 5", condition: "Good", lastService: "2026-07-11" },
+  { id: "eq-6", name: "Steam cleaner", category: "Interior", location: "Shop — Storage", condition: "Out of service", lastService: "2026-03-04" },
+  { id: "eq-7", name: "Water tank & pump", category: "Mobile", location: "Van 1", condition: "Good", lastService: "2026-09-28" },
+  { id: "eq-8", name: "Service van", category: "Vehicle", location: "Van 5", condition: "Good", lastService: "2026-10-18" },
+];
+
+function loadEquipment() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(EQUIPMENT_KEY));
+    if (Array.isArray(saved)) return saved;
+  } catch (e) {}
+  return DEFAULT_EQUIPMENT.map((e) => ({ ...e }));
+}
+function saveEquipment(items) {
+  try { localStorage.setItem(EQUIPMENT_KEY, JSON.stringify(items)); } catch (e) {}
+}
+
+function updateEquipment(id, changes) {
+  const items = loadEquipment();
+  const item = items.find((e) => e.id === id);
+  if (!item) return;
+  Object.assign(item, changes);
+  saveEquipment(items);
+  renderAll();
+}
+function setEquipmentCondition(id, condition) {
+  updateEquipment(id, { condition });
+}
+function markEquipmentServiced(id) {
+  updateEquipment(id, { lastService: todayKey(), condition: "Good" });
+}
+
+function removeEquipment(id) {
+  const item = loadEquipment().find((e) => e.id === id);
+  if (!item || !confirm(`Remove "${item.name}" (${item.location}) from inventory?`)) return;
+  saveEquipment(loadEquipment().filter((e) => e.id !== id));
+  renderAll();
+}
+
+function addEquipment(event) {
+  event.preventDefault();
+  const val = (id) => document.getElementById(id).value.trim();
+  const items = loadEquipment();
+  items.push({
+    id: "eq-" + Date.now(),
+    name: val("ef-name"),
+    category: val("ef-category") || "General",
+    location: val("ef-location") || "Shop",
+    condition: val("ef-condition"),
+    lastService: val("ef-service"),
+  });
+  saveEquipment(items);
+  renderAll();
+}
+
+function resetEquipmentList() {
+  if (!confirm("Reset the inventory to the starting equipment? Any changes and items you added will be lost.")) return;
+  try { localStorage.removeItem(EQUIPMENT_KEY); } catch (e) {}
+  renderAll();
+}
+
+function daysSince(key) {
+  if (!key) return null;
+  return Math.floor((new Date(todayKey() + "T00:00:00") - new Date(key + "T00:00:00")) / 86400000);
+}
+
+function renderEquipmentTable(items) {
+  if (!items.length) return emptyNote("No equipment yet — add one below.");
+  return `
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-line/10 text-left text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <th class="whitespace-nowrap px-3 py-2">Equipment</th>
+            <th class="whitespace-nowrap px-3 py-2">Location</th>
+            <th class="whitespace-nowrap px-3 py-2">Last serviced</th>
+            <th class="whitespace-nowrap px-3 py-2">Condition</th>
+            <th class="px-3 py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((e) => {
+            const days = daysSince(e.lastService);
+            return `
+            <tr class="border-b border-line/5 last:border-0">
+              <td class="px-3 py-2.5">
+                <p class="whitespace-nowrap font-medium text-ink">${escapeHtml(e.name)}</p>
+                <p class="text-xs text-muted">${escapeHtml(e.category)}</p>
+              </td>
+              <td class="whitespace-nowrap px-3 py-2.5 text-ink">${escapeHtml(e.location)}</td>
+              <td class="whitespace-nowrap px-3 py-2.5">
+                <p class="text-ink">${e.lastService ? formatDateKey(e.lastService, { month: "short", day: "numeric", year: "numeric" }) : "—"}</p>
+                ${days != null ? `<p class="text-xs text-muted">${days <= 0 ? "Today" : days + " day(s) ago"}</p>` : ""}
+              </td>
+              <td class="px-3 py-2.5">
+                <select onchange="setEquipmentCondition('${e.id}', this.value)" aria-label="Condition"
+                  style="background-color:rgb(var(--color-panel)); color:rgb(var(--color-ink));"
+                  class="rounded-full border-0 px-2 py-0.5 text-[11px] font-medium focus:outline-none focus:ring-2 focus:ring-brand-red/15 ${EQUIPMENT_CONDITION_STYLES[e.condition] || ""}">
+                  ${EQUIPMENT_CONDITIONS.map((c) => `<option value="${c}" ${c === e.condition ? "selected" : ""}>${c}</option>`).join("")}
+                </select>
+              </td>
+              <td class="px-3 py-2.5">
+                <div class="flex items-center justify-end gap-1">
+                  <button onclick="markEquipmentServiced('${e.id}')" title="Mark serviced today" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-brand-amber/10 hover:text-brand-amber"><i data-lucide="wrench" class="h-4 w-4"></i></button>
+                  <button onclick="removeEquipment('${e.id}')" title="Remove" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-brand-red/10 hover:text-brand-red"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+                </div>
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderEquipmentForm() {
+  return `
+    <form onsubmit="addEquipment(event)" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <input id="ef-name" required placeholder="Equipment name" class="${FIELD_CLASS} col-span-2" />
+      <input id="ef-category" placeholder="Category" class="${FIELD_CLASS}" />
+      <input id="ef-location" placeholder="Location (Shop, Van 1)" class="${FIELD_CLASS}" />
+      <select id="ef-condition" style="background-color:rgb(var(--color-panel)); color:rgb(var(--color-ink));" class="${FIELD_CLASS}">
+        ${EQUIPMENT_CONDITIONS.map((c) => `<option value="${c}">${c}</option>`).join("")}
+      </select>
+      <input id="ef-service" type="date" value="${todayKey()}" title="Last serviced" class="${FIELD_CLASS}" />
+      <button type="submit" class="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-red px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-red/90 sm:col-span-3 lg:col-span-6 lg:justify-self-end lg:px-5">
+        <i data-lucide="plus" class="h-4 w-4"></i>Add equipment
+      </button>
+    </form>`;
+}
+
+function renderInventorySection() {
+  const root = document.getElementById("section-root");
+  const items = loadEquipment();
+  const count = (c) => items.filter((e) => e.condition === c).length;
+  const issues = items.filter((e) => e.condition !== "Good");
+
+  root.innerHTML = `
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      ${statCard("Total Equipment", fmt(items.length), "Tools, machines and vans", "warehouse")}
+      ${statCard("In Good Condition", fmt(count("Good")), "Ready to use", "circle-check")}
+      ${statCard("Needs Repair", fmt(count("Needs repair")), "Still usable, schedule a fix", "wrench")}
+      ${statCard("Out of Service", fmt(count("Out of service")), "Not usable right now", "circle-x")}
+    </div>
+    ${overviewCard("Needs attention", issues.length
+      ? `<ul class="flex flex-wrap gap-2">` + issues.map((e) => `
+          <li class="inline-flex items-center gap-2 rounded-lg border border-line/10 px-3 py-1.5 text-sm">
+            <span class="text-ink">${escapeHtml(e.name)}</span>
+            <span class="text-xs text-muted">${escapeHtml(e.location)}</span>
+            <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${EQUIPMENT_CONDITION_STYLES[e.condition]}">${e.condition}</span>
+          </li>`).join("") + `</ul>`
+      : emptyNote("All equipment is in good condition."))}
+    ${overviewCard("Equipment", renderEquipmentTable(items))}
+    ${overviewCard("Add equipment", renderEquipmentForm())}`;
+}
+
+// ---------------------------------------------------------------------------
 // Settings — business profile and preferences, stored in this browser only.
 // ---------------------------------------------------------------------------
 
@@ -2499,11 +2673,12 @@ function renderSettingsSection() {
           ], sidebarCollapsed, "setSidebarCollapsedChoice"))}`)}
         ${overviewCard("Data in this browser", `
           ${settingRow("Stock list", "Restore the starting supplies list.", `<button onclick="resetStockList()" class="${outlineBtn}">Reset stocks</button>`)}
+          ${settingRow("Inventory", "Restore the starting equipment list.", `<button onclick="resetEquipmentList()" class="${outlineBtn}">Reset inventory</button>`)}
           ${settingRow("Notifications", "Show all notifications as unread again.", `<button onclick="clearNotificationHistory()" class="${outlineBtn}">Clear history</button>`)}`)}
       </div>
     </div>
     <p class="rounded-xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-sm shadow-black/5">
-      Settings, stock counts and walk-in bookings are saved in this browser only — they won't appear on other devices.
+      Settings, stock counts, inventory and walk-in bookings are saved in this browser only — they won't appear on other devices.
     </p>`;
 }
 
@@ -2625,6 +2800,7 @@ const SECTION_RENDERERS = {
   sales: renderSalesSection,
   financials: renderFinancialsSection,
   stocks: renderStocksSection,
+  inventory: renderInventorySection,
   settings: renderSettingsSection,
   access: renderAccessSection,
   bookings: renderBookingsSection,
