@@ -437,14 +437,17 @@ function paidTransactions() {
 
 const state = { timeframe: "today", serviceType: "all", section: "overview", transactionFilter: "All" };
 
-// Nav is role-scoped: Admin runs day-to-day operations (no revenue data or
-// account management); Owner sees everything, including Financials and
-// User Access; Employee gets just their booking queue.
+// Nav is role-scoped: Admin runs day-to-day operations (no account
+// management); Owner sees everything, including User Access; Employee gets
+// just their booking queue.
 const ALL_SECTIONS = [
   { id: "overview", label: "Overview", icon: "layout-dashboard", description: "What needs attention today, and how every customer channel is trending." },
+  { id: "sales", label: "Sales", icon: "shopping-cart", description: "What sold, how customers paid, and which services bring in the most." },
   { id: "financials", label: "Financials", icon: "wallet", description: "Revenue, transactions, and outstanding invoices across every channel." },
-  { id: "access", label: "User Access", icon: "shield", description: "Who can sign in, which pages each role can reach, and password resets." },
+  { id: "stocks", label: "Stocks", icon: "package", description: "Cleaning supplies and materials on hand, with low-stock alerts for reordering." },
   { id: "bookings", label: "Bookings", icon: "clipboard-list", description: "Booking counts and vehicle details for walk-in customers." },
+  { id: "access", label: "User Access", icon: "shield", description: "Who can sign in, which pages each role can reach, and password resets." },
+  { id: "settings", label: "Settings", icon: "settings", description: "Business details, appearance, and data stored in this browser." },
 ];
 
 // Per-role page access lives on ACCOUNTS[role].sections (set further down)
@@ -753,8 +756,8 @@ function loadAllBookings() {
 // ---------------------------------------------------------------------------
 
 const ACCOUNTS = {
-  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "bookings"] },
-  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "financials", "access"] },
+  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "sales", "financials", "stocks", "bookings", "settings"] },
+  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "sales", "financials", "stocks", "access", "settings"] },
   employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings"] },
 };
 const SESSION_KEY = "mrklin_session_v1";
@@ -1820,9 +1823,10 @@ function renderSidebar() {
   const centerItem = collapsed ? "lg:justify-center lg:px-0" : "";
 
   const overdueInvoiceCount = INVOICES.filter((i) => i.status === "Overdue").length;
+  const lowStockCount = loadStock().filter((s) => stockStatus(s) !== "In stock").length;
   const navSections = sectionsForRole(currentRole);
   const sectionsHtml = navSections.map((s) => {
-    const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : 0;
+    const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : s.id === "stocks" ? lowStockCount : 0;
     const active = state.section === s.id;
     return `
     <button onclick="handleSectionNavClick('${s.id}')" title="${s.label}"
@@ -2171,6 +2175,338 @@ function renderServicesSection() {
   renderServiceChannelsGrid();
 }
 
+// ---------------------------------------------------------------------------
+// Sales — built from the same TRANSACTIONS list as Financials, but cut by
+// payment method and service rather than by channel.
+// ---------------------------------------------------------------------------
+
+function emptyNote(text) {
+  return `<p class="rounded-xl border border-line/10 bg-line/5 p-4 text-center text-sm text-muted">${text}</p>`;
+}
+
+function amountBars(rows) {
+  const max = Math.max(...rows.map((r) => r.amount), 1);
+  return `<ul class="space-y-3">` + rows.map((r) => `
+    <li>
+      <div class="mb-1 flex items-center justify-between gap-2 text-sm">
+        <span class="flex min-w-0 items-center gap-2 text-ink"><i data-lucide="${r.icon}" class="h-3.5 w-3.5 shrink-0 text-brand-amber"></i><span class="truncate">${r.label}</span></span>
+        <span class="shrink-0 font-semibold tabular-nums text-ink">${peso(r.amount)}</span>
+      </div>
+      <div class="seg-h h-2.5 w-full overflow-hidden bg-line/10">
+        <div class="h-full bg-gradient-to-r from-brand-amber to-brand-red" style="width:${Math.round((r.amount / max) * 100)}%"></div>
+      </div>
+    </li>`).join("") + `</ul>`;
+}
+
+function renderSalesByMethod() {
+  const paid = paidTransactions();
+  const rows = Object.keys(PAYMENT_METHOD_ICON).map((m) => ({
+    label: m, icon: PAYMENT_METHOD_ICON[m],
+    amount: paid.filter((t) => t.method === m).reduce((s, t) => s + t.amount, 0),
+  })).filter((r) => r.amount > 0).sort((a, b) => b.amount - a.amount);
+  return rows.length ? amountBars(rows) : emptyNote("No paid sales yet.");
+}
+
+function renderTopServices() {
+  const rows = paidTransactions().slice().sort((a, b) => b.amount - a.amount).slice(0, 5).map((t) => {
+    const ch = CHANNELS.find((c) => c.id === t.channelId);
+    return { label: t.service, icon: ch ? ch.icon : "receipt", amount: t.amount };
+  });
+  return rows.length ? amountBars(rows) : emptyNote("No paid sales yet.");
+}
+
+function renderSalesSection() {
+  const root = document.getElementById("section-root");
+  const paid = paidTransactions();
+  const gross = paid.reduce((s, t) => s + t.amount, 0);
+  const refunds = TRANSACTIONS.filter((t) => t.status === "Refunded").reduce((s, t) => s + t.amount, 0);
+  const pending = TRANSACTIONS.filter((t) => t.status === "Pending");
+  const pendingTotal = pending.reduce((s, t) => s + t.amount, 0);
+
+  root.innerHTML = `
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      ${statCard("Gross Sales", peso(gross), `${paid.length} paid sale(s)`, "shopping-cart")}
+      ${statCard("Refunds", peso(refunds), "Returned to customers", "undo-2")}
+      ${statCard("Net Sales", peso(gross - refunds), "Gross less refunds", "trending-up")}
+      ${statCard("Awaiting Payment", peso(pendingTotal), `${pending.length} sale(s) pending`, "hourglass")}
+    </div>
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      ${overviewCard("Sales by payment method", renderSalesByMethod())}
+      ${overviewCard("Top services", renderTopServices())}
+    </div>
+    ${overviewCard("Sales log", renderTransactionFilterRow() + renderTransactionsList())}`;
+}
+
+// ---------------------------------------------------------------------------
+// Stocks — supplies inventory, kept in localStorage so counts survive reloads
+// in this browser (no backend yet, same as walk-in bookings).
+// ---------------------------------------------------------------------------
+
+const STOCK_KEY = "mrklin_stock_v1";
+const DEFAULT_STOCK = [
+  { id: "st-1", name: "Car shampoo", category: "Washing", qty: 18, unit: "L", reorderAt: 10, unitCost: 180 },
+  { id: "st-2", name: "Carnauba wax", category: "Finishing", qty: 6, unit: "tubs", reorderAt: 4, unitCost: 650 },
+  { id: "st-3", name: "Ceramic spray coat", category: "Finishing", qty: 3, unit: "bottles", reorderAt: 5, unitCost: 1200 },
+  { id: "st-4", name: "Microfiber towels", category: "Tools", qty: 64, unit: "pcs", reorderAt: 30, unitCost: 45 },
+  { id: "st-5", name: "Interior cleaner", category: "Interior", qty: 9, unit: "L", reorderAt: 6, unitCost: 220 },
+  { id: "st-6", name: "Odor eliminator", category: "Interior", qty: 0, unit: "bottles", reorderAt: 4, unitCost: 300 },
+  { id: "st-7", name: "Tire shine", category: "Finishing", qty: 7, unit: "bottles", reorderAt: 5, unitCost: 260 },
+  { id: "st-8", name: "Engine degreaser", category: "Washing", qty: 4, unit: "L", reorderAt: 5, unitCost: 240 },
+];
+
+function loadStock() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STOCK_KEY));
+    if (Array.isArray(saved)) return saved;
+  } catch (e) {}
+  return DEFAULT_STOCK.map((s) => ({ ...s }));
+}
+function saveStock(items) {
+  try { localStorage.setItem(STOCK_KEY, JSON.stringify(items)); } catch (e) {}
+}
+function stockStatus(item) {
+  if (item.qty <= 0) return "Out of stock";
+  if (item.qty <= item.reorderAt) return "Low stock";
+  return "In stock";
+}
+const STOCK_STATUS_STYLES = {
+  "In stock": "bg-brand-amber/15 text-brand-amber",
+  "Low stock": "bg-line/10 text-muted",
+  "Out of stock": "bg-brand-red/15 text-brand-red",
+};
+
+function adjustStock(id, delta) {
+  const items = loadStock();
+  const item = items.find((s) => s.id === id);
+  if (!item) return;
+  item.qty = Math.max(0, item.qty + delta);
+  saveStock(items);
+  renderAll();
+}
+
+function removeStockItem(id) {
+  const item = loadStock().find((s) => s.id === id);
+  if (!item || !confirm(`Remove "${item.name}" from stocks?`)) return;
+  saveStock(loadStock().filter((s) => s.id !== id));
+  renderAll();
+}
+
+function addStockItem(event) {
+  event.preventDefault();
+  const val = (id) => document.getElementById(id).value.trim();
+  const items = loadStock();
+  items.push({
+    id: "st-" + Date.now(),
+    name: val("sf-name"),
+    category: val("sf-category") || "General",
+    qty: Math.max(0, Number(val("sf-qty")) || 0),
+    unit: val("sf-unit") || "pcs",
+    reorderAt: Math.max(0, Number(val("sf-reorder")) || 0),
+    unitCost: Math.max(0, Number(val("sf-cost")) || 0),
+  });
+  saveStock(items);
+  renderAll();
+}
+
+const FIELD_CLASS = "w-full rounded-lg border border-line/10 bg-line/5 px-3 py-2 text-sm text-ink placeholder:text-muted/60 focus:border-brand-red/60 focus:outline-none focus:ring-2 focus:ring-brand-red/15";
+
+function renderStockTable(items) {
+  if (!items.length) return emptyNote("No items yet — add one below.");
+  const stepBtn = "flex h-7 w-7 items-center justify-center rounded-lg border border-line/10 text-muted transition-colors hover:border-line/20 hover:bg-line/5 hover:text-ink";
+  return `
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-line/10 text-left text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <th class="whitespace-nowrap px-3 py-2">Item</th>
+            <th class="whitespace-nowrap px-3 py-2">On hand</th>
+            <th class="whitespace-nowrap px-3 py-2">Reorder at</th>
+            <th class="whitespace-nowrap px-3 py-2">Value</th>
+            <th class="whitespace-nowrap px-3 py-2">Status</th>
+            <th class="px-3 py-2"></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${items.map((s) => {
+            const status = stockStatus(s);
+            return `
+            <tr class="border-b border-line/5 last:border-0">
+              <td class="px-3 py-2.5">
+                <p class="whitespace-nowrap font-medium text-ink">${escapeHtml(s.name)}</p>
+                <p class="text-xs text-muted">${escapeHtml(s.category)}</p>
+              </td>
+              <td class="px-3 py-2.5">
+                <div class="flex items-center gap-2">
+                  <button onclick="adjustStock('${s.id}', -1)" class="${stepBtn}" aria-label="Use one"><i data-lucide="minus" class="h-3.5 w-3.5"></i></button>
+                  <span class="min-w-[4.5rem] whitespace-nowrap text-center tabular-nums text-ink">${s.qty} ${escapeHtml(s.unit)}</span>
+                  <button onclick="adjustStock('${s.id}', 1)" class="${stepBtn}" aria-label="Add one"><i data-lucide="plus" class="h-3.5 w-3.5"></i></button>
+                </div>
+              </td>
+              <td class="whitespace-nowrap px-3 py-2.5 tabular-nums text-muted">${s.reorderAt} ${escapeHtml(s.unit)}</td>
+              <td class="whitespace-nowrap px-3 py-2.5 tabular-nums text-ink">${peso(s.qty * s.unitCost)}</td>
+              <td class="px-3 py-2.5"><span class="whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ${STOCK_STATUS_STYLES[status]}">${status}</span></td>
+              <td class="px-3 py-2.5 text-right">
+                <button onclick="removeStockItem('${s.id}')" title="Remove item" class="rounded-lg p-1.5 text-muted transition-colors hover:bg-brand-red/10 hover:text-brand-red"><i data-lucide="trash-2" class="h-4 w-4"></i></button>
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderStockForm() {
+  return `
+    <form onsubmit="addStockItem(event)" class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+      <input id="sf-name" required placeholder="Item name" class="${FIELD_CLASS} col-span-2" />
+      <input id="sf-category" placeholder="Category" class="${FIELD_CLASS}" />
+      <input id="sf-qty" type="number" min="0" required placeholder="Qty" class="${FIELD_CLASS}" />
+      <input id="sf-unit" placeholder="Unit (L, pcs)" class="${FIELD_CLASS}" />
+      <input id="sf-reorder" type="number" min="0" placeholder="Reorder at" class="${FIELD_CLASS}" />
+      <input id="sf-cost" type="number" min="0" step="0.01" placeholder="Unit cost ₱" class="${FIELD_CLASS}" />
+      <button type="submit" class="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-red px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-red/90 sm:col-span-3 lg:col-span-7 lg:justify-self-end lg:px-5">
+        <i data-lucide="plus" class="h-4 w-4"></i>Add item
+      </button>
+    </form>`;
+}
+
+function renderStocksSection() {
+  const root = document.getElementById("section-root");
+  const items = loadStock();
+  const low = items.filter((s) => stockStatus(s) === "Low stock");
+  const out = items.filter((s) => stockStatus(s) === "Out of stock");
+  const value = items.reduce((sum, s) => sum + s.qty * s.unitCost, 0);
+  const reorder = [...out, ...low];
+
+  root.innerHTML = `
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      ${statCard("Items Tracked", fmt(items.length), "Supplies and materials", "package")}
+      ${statCard("Low Stock", fmt(low.length), "At or below reorder level", "triangle-alert")}
+      ${statCard("Out of Stock", fmt(out.length), "Needs restocking now", "package-x")}
+      ${statCard("Stock Value", peso(value), "At unit cost", "coins")}
+    </div>
+    ${overviewCard("Reorder list", reorder.length
+      ? `<ul class="flex flex-wrap gap-2">` + reorder.map((s) => `
+          <li class="inline-flex items-center gap-2 rounded-lg border border-line/10 px-3 py-1.5 text-sm">
+            <span class="text-ink">${escapeHtml(s.name)}</span>
+            <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STOCK_STATUS_STYLES[stockStatus(s)]}">${s.qty} ${escapeHtml(s.unit)} left</span>
+          </li>`).join("") + `</ul>`
+      : emptyNote("Everything is stocked above its reorder level."))}
+    ${overviewCard("Inventory", renderStockTable(items))}
+    ${overviewCard("Add stock item", renderStockForm())}`;
+}
+
+// ---------------------------------------------------------------------------
+// Settings — business profile and preferences, stored in this browser only.
+// ---------------------------------------------------------------------------
+
+const PROFILE_KEY = "mrklin_business_profile_v1";
+const DEFAULT_PROFILE = {
+  name: "MR. Klin Trading Services Corporation",
+  phone: "",
+  email: "",
+  address: "",
+  hours: "Mon–Sat, 8:00 AM – 6:00 PM",
+};
+
+function loadProfile() {
+  try { return { ...DEFAULT_PROFILE, ...(JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}) }; }
+  catch (e) { return { ...DEFAULT_PROFILE }; }
+}
+
+function saveProfile(event) {
+  event.preventDefault();
+  const profile = {};
+  Object.keys(DEFAULT_PROFILE).forEach((k) => { profile[k] = document.getElementById(`pf-${k}`).value.trim(); });
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (e) {}
+  document.getElementById("pf-confirm").classList.remove("hidden");
+}
+
+function setThemeChoice(theme) {
+  if (theme === currentTheme) return;
+  toggleTheme();
+  renderAll();
+}
+
+function setSidebarCollapsedChoice(collapsed) {
+  if (collapsed === sidebarCollapsed) return;
+  toggleSidebarCollapse();
+  renderAll();
+}
+
+function resetStockList() {
+  if (!confirm("Reset the stock list to the starting items? Any counts and items you added will be lost.")) return;
+  try { localStorage.removeItem(STOCK_KEY); } catch (e) {}
+  renderAll();
+}
+
+function clearNotificationHistory() {
+  readNotifications = new Set();
+  saveReadNotifications();
+  renderAll();
+}
+
+function choiceButtons(options, current, handler) {
+  return `<div class="inline-flex rounded-xl bg-line/5 p-1">` + options.map((o) => `
+    <button onclick="${handler}(${JSON.stringify(o.value).replace(/"/g, "'")})"
+      class="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+        o.value === current ? "bg-brand-red text-white" : "text-muted hover:text-ink"
+      }"><i data-lucide="${o.icon}" class="h-3.5 w-3.5"></i>${o.label}</button>`).join("") + `</div>`;
+}
+
+function settingRow(title, sub, controlHtml) {
+  return `
+    <div class="flex flex-col gap-3 border-b border-line/5 py-3 last:border-0 sm:flex-row sm:items-center sm:justify-between">
+      <div class="min-w-0">
+        <p class="text-sm font-medium text-ink">${title}</p>
+        <p class="text-xs text-muted">${sub}</p>
+      </div>
+      <div class="shrink-0">${controlHtml}</div>
+    </div>`;
+}
+
+function renderSettingsSection() {
+  const root = document.getElementById("section-root");
+  const p = loadProfile();
+  const field = (key, label, type) => `
+    <div class="${key === "name" || key === "address" ? "sm:col-span-2" : ""}">
+      <label for="pf-${key}" class="mb-1 block text-xs font-medium text-muted">${label}</label>
+      <input id="pf-${key}" type="${type || "text"}" value="${escapeHtml(p[key])}" class="${FIELD_CLASS}" />
+    </div>`;
+  const outlineBtn = "rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-line/20 hover:bg-line/5 hover:text-ink";
+
+  root.innerHTML = `
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      ${overviewCard("Business profile", `
+        <form onsubmit="saveProfile(event)" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          ${field("name", "Business name")}
+          ${field("phone", "Phone", "tel")}
+          ${field("email", "Email", "email")}
+          ${field("address", "Address")}
+          ${field("hours", "Business hours")}
+          <div class="flex items-center justify-end gap-3 sm:col-span-2">
+            <p id="pf-confirm" class="hidden text-xs text-brand-amber">Saved.</p>
+            <button type="submit" class="rounded-lg bg-brand-red px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-red/90">Save changes</button>
+          </div>
+        </form>`)}
+      <div class="space-y-5">
+        ${overviewCard("Appearance", `
+          ${settingRow("Theme", "Dark or light dashboard colours.", choiceButtons([
+            { value: "dark", label: "Dark", icon: "moon" }, { value: "light", label: "Light", icon: "sun" },
+          ], currentTheme, "setThemeChoice"))}
+          ${settingRow("Sidebar", "Show the full sidebar or icons only (desktop).", choiceButtons([
+            { value: false, label: "Expanded", icon: "panel-left-open" }, { value: true, label: "Collapsed", icon: "panel-left-close" },
+          ], sidebarCollapsed, "setSidebarCollapsedChoice"))}`)}
+        ${overviewCard("Data in this browser", `
+          ${settingRow("Stock list", "Restore the starting supplies list.", `<button onclick="resetStockList()" class="${outlineBtn}">Reset stocks</button>`)}
+          ${settingRow("Notifications", "Show all notifications as unread again.", `<button onclick="clearNotificationHistory()" class="${outlineBtn}">Clear history</button>`)}`)}
+      </div>
+    </div>
+    <p class="rounded-xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-sm shadow-black/5">
+      Settings, stock counts and walk-in bookings are saved in this browser only — they won't appear on other devices.
+    </p>`;
+}
+
 function renderPageHeader() {
   const el = document.getElementById("page-header-text");
   if (!el) return;
@@ -2286,7 +2622,10 @@ function renderAccessSection() {
 const SECTION_RENDERERS = {
   overview: renderOverviewSection,
   services: renderServicesSection,
+  sales: renderSalesSection,
   financials: renderFinancialsSection,
+  stocks: renderStocksSection,
+  settings: renderSettingsSection,
   access: renderAccessSection,
   bookings: renderBookingsSection,
 };
