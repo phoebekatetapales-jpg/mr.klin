@@ -447,6 +447,7 @@ const ALL_SECTIONS = [
   { id: "stocks", label: "Stocks", icon: "package", description: "Cleaning supplies and materials on hand, with low-stock alerts for reordering." },
   { id: "inventory", label: "Inventory", icon: "warehouse", description: "Equipment and assets the business owns — where each one is, its condition, and when it was last serviced." },
   { id: "bookings", label: "Bookings", icon: "clipboard-list", description: "Booking counts and vehicle details for walk-in customers." },
+  { id: "bookinglist", label: "Booking List", icon: "list-checks", description: "Every walk-in and website booking in one list — search, filter by status or source, and mark jobs done." },
   { id: "access", label: "User Access", icon: "shield", description: "Who can sign in, which pages each role can reach, and password resets." },
   { id: "settings", label: "Settings", icon: "settings", description: "Business details, appearance, and data stored in this browser." },
 ];
@@ -757,9 +758,9 @@ function loadAllBookings() {
 // ---------------------------------------------------------------------------
 
 const ACCOUNTS = {
-  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookings", "settings"] },
-  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "access", "settings"] },
-  employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings"] },
+  admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookings", "bookinglist", "settings"] },
+  owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookinglist", "access", "settings"] },
+  employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings", "bookinglist"] },
 };
 const SESSION_KEY = "mrklin_session_v1";
 let loginRole = "admin";
@@ -1133,6 +1134,145 @@ function renderBookingsSection() {
               </tr>`).join("") : `
               <tr><td colspan="10" class="px-4 py-6 text-center text-muted">${selectedDay ? "No units booked for this day." : "No bookings yet."}</td></tr>`}
           </tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// Booking List — flat, searchable list of every booking (walk-in + website).
+// Typing in the search box only re-renders the rows so the input keeps focus.
+const bookingList = { query: "", status: "all", source: "all" };
+const BOOKING_LIST_STATUSES = [
+  { id: "all", label: "All" },
+  { id: "upcoming", label: "Upcoming" },
+  { id: "today", label: "Today" },
+  { id: "completed", label: "Completed" },
+];
+const BOOKING_LIST_SOURCES = [
+  { id: "all", label: "All sources" },
+  { id: "walkin", label: "Walk-in" },
+  { id: "website", label: "Website" },
+];
+
+function filteredBookingList() {
+  const today = todayKey();
+  const q = bookingList.query.trim().toLowerCase();
+  return loadAllBookings()
+    .filter((b) => {
+      const key = bookingDateKey(b);
+      const done = b.status === "Completed";
+      if (bookingList.status === "upcoming" && (done || b.status === "Cancelled" || key < today)) return false;
+      if (bookingList.status === "today" && key !== today) return false;
+      if (bookingList.status === "completed" && !done) return false;
+      if (bookingList.source === "website" && b.source !== "website") return false;
+      if (bookingList.source === "walkin" && b.source === "website") return false;
+      if (!q) return true;
+      return [b.ownerName, b.phone, b.vehicle, b.plate, b.service, b.notes, b.status]
+        .some((f) => String(f || "").toLowerCase().includes(q));
+    })
+    .sort((a, b) => {
+      const ka = bookingDateKey(a), kb = bookingDateKey(b);
+      // Upcoming reads best soonest-first; everything else newest-first.
+      return bookingList.status === "upcoming" ? ka.localeCompare(kb) : kb.localeCompare(ka);
+    });
+}
+
+function bookingListRowsHtml(rows) {
+  if (!rows.length) {
+    return `<tr><td colspan="8" class="px-4 py-8 text-center text-muted">${loadAllBookings().length ? "No bookings match these filters." : "No bookings yet."}</td></tr>`;
+  }
+  const today = todayKey();
+  return rows.map((v) => {
+    const key = bookingDateKey(v);
+    return `
+      <tr class="border-b border-line/5 transition-colors last:border-0 hover:bg-line/[0.02]">
+        <td class="whitespace-nowrap px-4 py-3 tabular-nums ${key === today ? "font-semibold text-brand-red" : "text-ink"}">${key === today ? "Today" : formatDateKey(key)}</td>
+        <td class="whitespace-nowrap px-4 py-3">
+          <p class="text-ink">${v.ownerName || "—"}</p>
+          ${v.phone ? `<p class="text-[11px] text-muted">${v.phone}</p>` : ""}
+        </td>
+        <td class="whitespace-nowrap px-4 py-3">
+          <p class="text-ink">${v.vehicle || "—"}</p>
+          ${v.plate ? `<p class="text-[11px] text-muted">${v.plate}</p>` : ""}
+        </td>
+        <td class="px-4 py-3 text-muted">
+          <p>${v.service || "—"}</p>
+          ${v.notes ? `<p class="mt-0.5 max-w-[260px] text-[11px]">Note: ${v.notes}</p>` : ""}
+        </td>
+        <td class="whitespace-nowrap px-4 py-3 text-muted">${v.source === "website"
+          ? `<span class="inline-flex items-center gap-1 text-brand-amber"><i data-lucide="globe" class="h-3.5 w-3.5"></i> Website</span>`
+          : `<span class="inline-flex items-center gap-1"><i data-lucide="store" class="h-3.5 w-3.5"></i> Walk-in</span>`}</td>
+        <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
+        <td class="whitespace-nowrap px-4 py-3">
+          <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-line/10 text-muted"}">${v.status || "Booked"}</span>
+        </td>
+        <td class="whitespace-nowrap px-4 py-3">
+          ${v.status === "Completed"
+            ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-brand-amber"><i data-lucide="check" class="h-3.5 w-3.5"></i> Done</span>`
+            : `<button onclick="markWalkinDone('${v.id}')" class="rounded-lg border border-brand-amber/40 px-2 py-1 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark as done</button>`}
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+function refreshBookingListRows() {
+  const rows = filteredBookingList();
+  const body = document.getElementById("booking-list-body");
+  const count = document.getElementById("booking-list-count");
+  if (body) body.innerHTML = bookingListRowsHtml(rows);
+  if (count) count.textContent = `${rows.length} booking${rows.length === 1 ? "" : "s"}`;
+  lucide.createIcons();
+}
+function setBookingListQuery(value) {
+  bookingList.query = value;
+  refreshBookingListRows();
+}
+function setBookingListStatus(id) {
+  bookingList.status = id;
+  renderAll();
+}
+function setBookingListSource(id) {
+  bookingList.source = id;
+  renderAll();
+}
+
+function renderBookingListSection() {
+  const root = document.getElementById("section-root");
+  const rows = filteredBookingList();
+  const pill = (active) => `rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${active ? "bg-brand-red text-white shadow-sm" : "border border-line/10 text-muted hover:border-line/20 hover:bg-line/5 hover:text-ink"}`;
+  root.innerHTML = `
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <div class="relative w-full lg:max-w-xs">
+        <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"></i>
+        <input type="search" value="${escapeHtml(bookingList.query)}" oninput="setBookingListQuery(this.value)" placeholder="Search name, phone, plate, service…"
+          class="w-full rounded-lg border border-line/10 bg-panel py-2 pl-9 pr-3 text-sm text-ink placeholder:text-muted focus:border-brand-red/50 focus:outline-none focus:ring-2 focus:ring-brand-red/20" />
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        ${BOOKING_LIST_STATUSES.map((s) => `<button onclick="setBookingListStatus('${s.id}')" class="${pill(bookingList.status === s.id)}">${s.label}</button>`).join("")}
+        <span class="mx-1 hidden h-5 w-px bg-line/15 sm:inline-block"></span>
+        ${BOOKING_LIST_SOURCES.map((s) => `<button onclick="setBookingListSource('${s.id}')" class="${pill(bookingList.source === s.id)}">${s.label}</button>`).join("")}
+        <button onclick="openBookingForm()" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-red/10 px-3 py-1.5 text-xs font-medium text-brand-red transition-colors hover:bg-brand-red/20">
+          <i data-lucide="plus" class="h-3.5 w-3.5"></i> New walk-in
+        </button>
+      </div>
+    </div>
+    <div>
+      <p id="booking-list-count" class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">${rows.length} booking${rows.length === 1 ? "" : "s"}</p>
+      <div class="overflow-x-auto rounded-xl border border-line/10 bg-panel shadow-sm shadow-black/5">
+        <table class="w-full text-left text-sm">
+          <thead>
+            <tr class="border-b border-line/10 bg-line/[0.03] text-[11px] font-semibold uppercase tracking-wider text-muted">
+              <th class="whitespace-nowrap px-4 py-3">Date</th>
+              <th class="whitespace-nowrap px-4 py-3">Customer</th>
+              <th class="whitespace-nowrap px-4 py-3">Vehicle</th>
+              <th class="whitespace-nowrap px-4 py-3">Service</th>
+              <th class="whitespace-nowrap px-4 py-3">Source</th>
+              <th class="whitespace-nowrap px-4 py-3">Logged</th>
+              <th class="whitespace-nowrap px-4 py-3">Status</th>
+              <th class="whitespace-nowrap px-4 py-3">Action</th>
+            </tr>
+          </thead>
+          <tbody id="booking-list-body">${bookingListRowsHtml(rows)}</tbody>
         </table>
       </div>
     </div>`;
@@ -2804,6 +2944,7 @@ const SECTION_RENDERERS = {
   settings: renderSettingsSection,
   access: renderAccessSection,
   bookings: renderBookingsSection,
+  bookinglist: renderBookingListSection,
 };
 
 function renderAll() {
