@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mr. Klin Trading and Services Corp. — Auto Detailing, Repair &amp; Paint in Taguig</title>
 <meta name="description" content="Mr. Klin Trading and Services Corp. — your one-stop shop in the South for auto detailing, nano ceramic coating, mechanical services, body repair and paint in Taguig City.">
+<link rel="icon" type="image/png" sizes="32x32" href="images/icon-32.png">
+<link rel="apple-touch-icon" href="images/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Inter:wght@400;500;600&display=swap">
@@ -72,6 +74,7 @@
   h2.title { font-size: clamp(32px, 4vw, 52px); line-height: 1.05; }
   .section-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 48px; }
   .section-head > div { flex: 1 1 480px; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+  .section-head > .cta-row { flex: 0 1 auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; }
   .section-head > p { flex: 1 1 320px; max-width: 420px; font-size: 16px; line-height: 1.65; color: var(--muted); }
 
   /* Buttons */
@@ -94,16 +97,16 @@
     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--line);
   }
-  .nav-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-block: 14px; }
+  .nav-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; padding-block: 10px; }
   .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); }
-  .brand-mark {
-    width: 44px; height: 44px; border-radius: 10px; background: var(--accent); color: var(--on-accent);
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 900; font-size: 18px;
+  /* Logo tile: black in dark mode, white in light mode */
+  .brand-logo {
+    display: block; height: 68px; width: auto; padding: 3px 8px; border-radius: 14px;
+    background: #0B0D10; border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 6px 18px -10px rgba(0,0,0,.6);
   }
-  .brand-name { display: flex; flex-direction: column; line-height: 1.1; }
-  .brand-name strong { font-family: 'Archivo', sans-serif; font-stretch: 125%; font-weight: 800; font-size: 18px; letter-spacing: .02em; }
-  .brand-name span { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+  [data-theme="light"] .brand-logo { background: #FFFFFF; border-color: var(--line); box-shadow: 0 4px 14px -10px rgba(0,0,0,.35); }
+  .footer-brand .brand-logo { height: 100px; padding: 6px 12px; border-radius: 18px; }
   nav.main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 28px; font-size: 15px; font-weight: 500; }
   nav.main a { color: var(--nav-link); text-decoration: none; padding: 12px 0; }
   nav.main a:hover, nav.main a.active { color: var(--text); }
@@ -167,6 +170,8 @@
   .service h3 { font-family: 'Archivo', sans-serif; font-stretch: 108%; font-weight: 700; font-size: 20px; line-height: 1.2; }
   .service ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 15px; color: var(--body); }
   .service li { display: flex; align-items: center; gap: 10px; }
+  .service-more { margin-top: auto; font-size: 14px; font-weight: 600; color: var(--kicker); text-decoration: none; }
+  .service-more:hover { text-decoration: underline; }
   .service li::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
 
   /* ---------- Packages ---------- */
@@ -212,6 +217,7 @@
   .contact-card .label { font-size: 13px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
   .contact-card a.num, .contact-card address { font-size: 17px; line-height: 1.5; color: var(--text); text-decoration: none; font-style: normal; padding: 4px 0; }
   .contact-card a.num:hover { color: var(--kicker); }
+  .contact-card a.num[href^="mailto:"], .footer-email { overflow-wrap: anywhere; }
   .contact-card a.dir { font-size: 15px; font-weight: 600; text-decoration: none; padding: 6px 0; }
 
   /* ---------- Footer ---------- */
@@ -314,9 +320,123 @@
     .bk-actions .btn { flex: 1; justify-content: center; }
   }
 
+  /* ---------- Mobile menu (tablets and phones) ---------- */
+  .menu-toggle {
+    display: none; width: 44px; height: 44px; flex: none; padding: 0; border-radius: 999px;
+    border: 1px solid var(--outline); background: var(--card); color: var(--text);
+    align-items: center; justify-content: center; cursor: pointer;
+  }
+  .menu-toggle .icon-close { display: none; }
+  .menu-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  @media (max-width: 900px) {
+    .nav-row { flex-wrap: nowrap; gap: 10px; }
+    .menu-toggle { display: inline-flex; }
+    nav.main {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      flex-direction: column; align-items: stretch; gap: 0;
+      padding: 6px clamp(16px, 4vw, 48px) 18px; background: var(--base);
+      border-bottom: 1px solid var(--line); box-shadow: 0 24px 32px -24px rgba(0,0,0,.45);
+    }
+    header.site.nav-open nav.main { display: flex; }
+    nav.main a { padding: 15px 2px; font-size: 17px; border-bottom: 1px solid var(--line); }
+    nav.main a:last-child { border-bottom: 0; }
+    nav.main a.active { color: var(--kicker); font-weight: 600; }
+    header.site.nav-open .menu-toggle .icon-menu { display: none; }
+    header.site.nav-open .menu-toggle .icon-close { display: block; }
+  }
+
+  /* ---------- Phones ---------- */
+  @media (max-width: 640px) {
+    .section { padding-block: 56px; }
+    .section-head { margin-bottom: 28px; gap: 16px; }
+    .section-head > div { gap: 12px; }
+    .brand-logo { height: 52px; padding: 2px 6px; border-radius: 12px; }
+    .nav-actions { gap: 8px; }
+    .nav-actions .btn { min-height: 44px; padding: 0 14px; font-size: 14px; gap: 8px; }
+    .hide-sm { display: none; }
+    .cta-row .btn { flex: 1 1 auto; justify-content: center; }
+    .btn-lg { min-height: 50px; padding: 0 20px; font-size: 15px; }
+    .hero-row { gap: 32px; padding-top: 36px; }
+    .hero-copy { gap: 22px; }
+    .hero p.lead { font-size: 16px; }
+    .stat { flex: 1 1 calc(50% - 1px); padding: 18px; }
+    .stat strong { font-size: 24px; }
+    .grid { gap: 12px; }
+    .car-card { flex: 1 1 calc(50% - 6px); border-radius: 16px; }
+    .car-info { padding: 12px 14px 14px; }
+    .car-info h3 { font-size: 15px; }
+    .car-info span { font-size: 12px; }
+    .car-info svg { display: none; }
+    .service { padding: 22px; gap: 16px; }
+    .package { padding: 26px 22px; }
+    .benefit { flex: 1 1 calc(50% - 6px); padding: 12px; font-size: 13px; gap: 8px; }
+    .ceramic-row { gap: 32px; }
+    .gallery { gap: 10px; }
+    .gallery figure { flex: 1 1 calc(50% - 5px); border-radius: 14px; }
+    .gallery figure:not(.placeholder) figcaption { padding: 28px 12px 10px; font-size: 12px; }
+    .contact-row { gap: 32px; }
+    .contact-cards { gap: 12px; }
+    .contact-card { flex: 1 1 calc(50% - 6px); padding: 18px; }
+    .contact-card a.num, .contact-card address { font-size: 15px; }
+    .contact-card:last-child { flex-basis: 100%; }
+    .footer-main { padding-block: 48px 36px; gap: 32px 24px; }
+    .footer-brand { flex-basis: 100%; }
+    .footer-col { flex: 1 1 calc(50% - 12px); }
+    .footer-col:last-child { flex-basis: 100%; }
+    .footer-bottom .container { flex-direction: column; align-items: flex-start; }
+    .photo-credits { font-size: 11px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { transition: none !important; }
+  }
+
+  /* ---------- Animations ----------
+     Kept last so they layer over each component's own transitions. Everything here is
+     switched off for visitors who ask their device to reduce motion. */
+  @media (prefers-reduced-motion: no-preference) {
+    /* Page intro: headline, text and buttons slide in one after another */
+    @keyframes rise { from { opacity: 0; translate: 0 22px; } to { opacity: 1; translate: 0 0; } }
+    @keyframes photo-in { from { opacity: 0; scale: .94; } to { opacity: 1; scale: 1; } }
+    @keyframes glow-drift { 0%, 100% { scale: 1; opacity: var(--glow); } 50% { scale: 1.12; opacity: calc(var(--glow) * 1.5); } }
+    @keyframes dot-ping { 0% { box-shadow: 0 0 0 0 rgba(255,90,31,.55); } 80%, 100% { box-shadow: 0 0 0 9px rgba(255,90,31,0); } }
+    @keyframes shine { from { translate: -120% 0; } to { translate: 220% 0; } }
+    .hero-copy > *, .svc-intro > * { animation: rise .8s cubic-bezier(.2,.7,.2,1) both; }
+    .hero-copy > :nth-child(2), .svc-intro > :nth-child(2) { animation-delay: .08s; }
+    .hero-copy > :nth-child(3), .svc-intro > :nth-child(3) { animation-delay: .16s; }
+    .hero-copy > :nth-child(4), .svc-intro > :nth-child(4) { animation-delay: .24s; }
+    .hero-copy > :nth-child(5), .svc-intro > :nth-child(5) { animation-delay: .32s; }
+    .hero-art .hero-photo { animation: photo-in 1s .15s cubic-bezier(.2,.7,.2,1) both; }
+    .hero-glow { animation: glow-drift 9s ease-in-out infinite; }
+    .pill .dot { animation: dot-ping 2.2s ease-out infinite; }
+
+    /* Header picks up a shadow once the page scrolls */
+    header.site { transition: box-shadow .3s ease, background-color .3s ease; }
+    header.site.scrolled { box-shadow: 0 10px 30px -18px rgba(0,0,0,.45); }
+
+    /* A light sweeps across the orange buttons on hover */
+    .btn-primary { position: relative; overflow: hidden; isolation: isolate; }
+    .btn-primary::after {
+      content: ""; position: absolute; inset: 0 auto 0 0; width: 45%; z-index: -1; pointer-events: none;
+      background: linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent); translate: -120% 0;
+    }
+    .btn-primary:hover::after { animation: shine .75s ease; }
+
+    /* Cards lift slightly on hover */
+    .service, .package, .value, .reach-card, .contact-card, .steps li { transition: transform .25s ease, box-shadow .25s ease, border-color .2s ease; }
+    .service:hover, .package:hover, .value:hover, .contact-card:hover, .steps li:hover { transform: translateY(-4px); box-shadow: 0 18px 34px -22px rgba(0,0,0,.45); }
+    .service:hover .service-icon, .value:hover .service-icon { transform: rotate(-6deg) scale(1.06); }
+    .service-icon { transition: transform .3s ease; }
+
+    /* Scroll reveal: the class is added by script, so content stays visible if scripts don't run.
+       Its transition list repeats the hover properties so cards keep their hover motion. */
+    .reveal {
+      opacity: 0; translate: 0 26px;
+      transition: opacity .7s cubic-bezier(.2,.7,.2,1) var(--reveal-delay, 0s), translate .7s cubic-bezier(.2,.7,.2,1) var(--reveal-delay, 0s),
+                  transform .25s ease, border-color .2s ease, padding .2s ease, box-shadow .25s ease;
+    }
+    .reveal.in { opacity: 1; translate: 0 0; }
   }
 </style>
 </head>
@@ -352,19 +472,14 @@
 <header class="site">
   <div class="container nav-row">
     <a href="#home" class="brand" aria-label="Mr. Klin — home">
-      <!-- Replace this badge with your logo: <img src="images/logo.png" alt="Mr. Klin" height="44"> -->
-      <div class="brand-mark" aria-hidden="true">MK</div>
-      <div class="brand-name">
-        <strong>MR. KLIN</strong>
-        <span>Trading &amp; Services Corp.</span>
-      </div>
+      <img class="brand-logo" src="images/logo.png" width="450" height="246" alt="Mr. Klin Trading &amp; Services Corporation">
     </a>
-    <nav class="main" aria-label="Main">
+    <nav class="main" id="mainNav" aria-label="Main">
       <a href="#home" class="active">Home</a>
-      <a href="#about">About us</a>
-      <a href="#services">Services</a>
-      <a href="#work">Our Work</a>
-      <a href="#contact">Contact Us</a>
+      <a href="about.html">About us</a>
+      <a href="services.html">Services</a>
+      <a href="work.html">Our Work</a>
+      <a href="contact.html">Contact Us</a>
     </nav>
     <div class="nav-actions">
       <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch to light mode" title="Switch to light mode">
@@ -373,7 +488,11 @@
       </button>
       <button type="button" class="btn btn-primary" data-book>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        Book a service
+        <span>Book<span class="hide-sm"> a service</span></span>
+      </button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false" aria-controls="mainNav">
+        <svg class="icon-menu" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg class="icon-close" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
   </div>
@@ -482,32 +601,38 @@
         <span class="kicker">Our services</span>
         <h2 class="title display">Everything your car needs, under one roof.</h2>
       </div>
+      <a href="services.html" class="btn btn-ghost">View all services</a>
     </div>
     <div class="grid">
       <article class="service">
         <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg></div>
         <h3>Auto Detailing</h3>
         <ul><li>Interior</li><li>Exterior</li><li>Engine</li></ul>
+        <a class="service-more" href="services.html#detailing">Learn more <span aria-hidden="true">&rarr;</span></a>
       </article>
       <article class="service">
         <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3zM9 12l2 2 4-4"/></svg></div>
         <h3>Nano Ceramic</h3>
         <ul><li>Tint film installation</li><li>Nano ceramic coating</li><li>PPF protection</li></ul>
+        <a class="service-more" href="services.html#ceramic">Learn more <span aria-hidden="true">&rarr;</span></a>
       </article>
       <article class="service">
         <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.2L3 17.8 6.2 21l6.3-6.3a4 4 0 0 0 5.2-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg></div>
         <h3>Mechanical Services</h3>
         <ul><li>Preventive maintenance (PMS)</li><li>Battery services</li><li>Tire services</li></ul>
+        <a class="service-more" href="services.html#mechanical">Learn more <span aria-hidden="true">&rarr;</span></a>
       </article>
       <article class="service">
         <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h7M14 4l6 6-9 9H5v-6zM12 6l6 6"/></svg></div>
         <h3>Body Repair &amp; Paint</h3>
         <ul><li>Dent repair</li><li>Scratch removal</li><li>Professional painting</li></ul>
+        <a class="service-more" href="services.html#body">Learn more <span aria-hidden="true">&rarr;</span></a>
       </article>
       <article class="service">
         <div class="service-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4zM17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></svg></div>
         <h3>Car Accessories</h3>
         <ul><li>Upholstery</li><li>Sounds &amp; lights</li><li>Central lock &amp; dashcam</li></ul>
+        <a class="service-more" href="services.html#accessories">Learn more <span aria-hidden="true">&rarr;</span></a>
       </article>
     </div>
   </div>
@@ -617,7 +742,7 @@
         <span class="kicker">Our work</span>
         <h2 class="title display">Fresh out of the bay.</h2>
       </div>
-      <a href="https://www.instagram.com/mr.klintrading" class="btn btn-ghost" target="_blank" rel="noopener">See more on Instagram</a>
+      <div class="cta-row"><a href="work.html" class="btn btn-primary">View full gallery</a><a href="https://www.instagram.com/mr.klintrading" class="btn btn-ghost" target="_blank" rel="noopener">See more on Instagram</a></div>
     </div>
     <div class="gallery">
       <figure><img src="images/work/work-1.jpg" width="560" height="700" alt="Freshly detailed bronze SUV with a mirror-gloss finish" loading="lazy"><figcaption>Exterior detail &amp; polish</figcaption></figure>
@@ -659,6 +784,10 @@
         <span class="label">Sunday line</span>
         <a class="num" href="tel:09338667408">0933-866-7408</a>
       </div>
+      <div class="contact-card">
+        <span class="label">Email</span>
+        <a class="num" href="mailto:mrklintradingservicescorp@gmail.com">mrklintradingservicescorp@gmail.com</a>
+      </div>
     </div>
   </div>
 </section>
@@ -668,11 +797,7 @@
   <div class="container footer-main">
     <div class="footer-brand">
       <a href="#home" class="brand" aria-label="Mr. Klin — back to top">
-        <div class="brand-mark" aria-hidden="true">MK</div>
-        <div class="brand-name">
-          <strong>MR. KLIN</strong>
-          <span>Trading &amp; Services Corp.</span>
-        </div>
+        <img class="brand-logo" src="images/logo.png" width="450" height="246" alt="Mr. Klin Trading &amp; Services Corporation" loading="lazy">
       </a>
       <p>Your one-stop shop in the South for auto detailing, nano ceramic coating, mechanical services, body repair and paint.</p>
       <div class="footer-social">
@@ -688,19 +813,19 @@
       <h4>Company</h4>
       <ul>
         <li><a href="#home">Home</a></li>
-        <li><a href="#about">About us</a></li>
-        <li><a href="#work">Our Work</a></li>
-        <li><a href="#contact">Contact Us</a></li>
+        <li><a href="about.html">About us</a></li>
+        <li><a href="work.html">Our Work</a></li>
+        <li><a href="contact.html">Contact Us</a></li>
       </ul>
     </nav>
     <div class="footer-col">
       <h4>Services</h4>
       <ul>
-        <li><a href="#services">Auto Detailing</a></li>
-        <li><a href="#ceramic">Nano Ceramic Coating</a></li>
-        <li><a href="#services">Mechanical Services</a></li>
-        <li><a href="#services">Body Repair &amp; Paint</a></li>
-        <li><a href="#services">Car Accessories</a></li>
+        <li><a href="services.html#detailing">Auto Detailing</a></li>
+        <li><a href="services.html#ceramic">Nano Ceramic Coating</a></li>
+        <li><a href="services.html#mechanical">Mechanical Services</a></li>
+        <li><a href="services.html#body">Body Repair &amp; Paint</a></li>
+        <li><a href="services.html#accessories">Car Accessories</a></li>
       </ul>
     </div>
     <div class="footer-col">
@@ -710,6 +835,7 @@
         <li><a href="tel:09178805755">0917-880-5755</a></li>
         <li><a href="tel:0288072457">02-8807-2457</a></li>
         <li><a href="tel:09338667408">0933-866-7408 (Sundays)</a></li>
+        <li><a href="mailto:mrklintradingservicescorp@gmail.com" class="footer-email">mrklintradingservicescorp@gmail.com</a></li>
       </ul>
     </div>
   </div>
@@ -739,9 +865,68 @@
     });
     sync();
 
+    // Mobile menu: the hamburger opens the nav as a drop-down panel
+    var header = document.querySelector('header.site');
+    var menuBtn = document.getElementById('menuToggle');
+    function setMenu(open) {
+      header.classList.toggle('nav-open', open);
+      menuBtn.setAttribute('aria-expanded', open);
+      menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    }
+    menuBtn.addEventListener('click', function () { setMenu(!header.classList.contains('nav-open')); });
+    document.querySelectorAll('#mainNav a').forEach(function (a) { a.addEventListener('click', function () { setMenu(false); }); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && header.classList.contains('nav-open')) { setMenu(false); menuBtn.focus(); } });
+    document.addEventListener('click', function (e) { if (!header.contains(e.target)) setMenu(false); });
+
+    // Header shadow once the page has scrolled
+    var onScroll = function () { header.classList.toggle('scrolled', window.scrollY > 8); };
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+    // Scroll reveal + stat count-up (skipped when the visitor prefers reduced motion)
+    var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!calm && 'IntersectionObserver' in window) {
+      var REVEAL = '.section-head, .story-copy, .story-text, .grid > *, .stats, .benefit, .gallery figure, .gal-item, .gal-bar,' +
+        ' .contact-copy, .contact-card, .ceramic-art, .ceramic-copy, .values > *, .steps li, .offer, .svc-copy, .svc-photo, .svc-panel,' +
+        ' .price-table-wrap, .faq-copy, .faq details, .svc-cta, .reach-card, .msg-form, .map-wrap, .photo-credits, .footer-main > *';
+      var countUp = function (el) {
+        var m = el.textContent.trim().match(/^(\d+)(\+?)$/); if (!m) return;
+        var end = +m[1], t0 = null;
+        var step = function (t) {
+          if (t0 === null) t0 = t;
+          var p = Math.min((t - t0) / 1200, 1);
+          el.textContent = Math.round(end * (1 - Math.pow(1 - p, 3))) + m[2];
+          if (p < 1) requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
+        setTimeout(function () { el.textContent = m[1] + m[2]; }, 1400); // always land on the real number
+      };
+      var revealer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (!e.isIntersecting) return;
+          e.target.classList.add('in');
+          if (e.target.matches('.stats')) e.target.querySelectorAll('.stat strong').forEach(countUp);
+          revealer.unobserve(e.target);
+        });
+      }, { rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
+      var tagReveals = function () {
+        document.querySelectorAll(REVEAL).forEach(function (el) {
+          if (el.classList.contains('reveal')) return;
+          // Stagger siblings in the same row so cards arrive one after another
+          var i = Array.prototype.indexOf.call(el.parentNode.children, el);
+          el.style.setProperty('--reveal-delay', (Math.min(i, 5) * 0.07) + 's');
+          el.classList.add('reveal');
+          revealer.observe(el);
+        });
+      };
+      tagReveals();
+      // The Our Work gallery redraws its photos when a filter is picked
+      var grid = document.getElementById('galGrid');
+      if (grid) new MutationObserver(tagReveals).observe(grid, { childList: true });
+    }
+
     // Highlight the nav link for the section on screen
     var links = document.querySelectorAll('nav.main a');
-    var map = { home: 0, about: 1, services: 2, packages: 2, ceramic: 2, work: 3, contact: 4 };
+    var map = { home: 0, about: 0, services: 2, packages: 2, ceramic: 2, work: 3, contact: 4 };
     if ('IntersectionObserver' in window) {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
@@ -1123,6 +1308,8 @@
     dlg.querySelector('[data-close]').addEventListener('click', function () { dlg.close(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
     renderPrices();
+    // Other pages link to index.html#book to open the booking straight away
+    if (location.hash === '#book') { go(0); dlg.showModal(); history.replaceState(null, '', location.pathname); }
   })();
 </script>
 </body>
