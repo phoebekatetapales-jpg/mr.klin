@@ -47,6 +47,9 @@
      swaps in a deeper shade for text/borders only (fills keep the brand tone). */
   :root[data-theme="light"] .text-brand-amber { color: #A8650A; }
   :root[data-theme="light"] .border-brand-amber\/40 { border-color: rgb(168 101 10 / 0.35); }
+  /* Logo tile: black in dark mode, white in light mode (logo.png is transparent) */
+  .brand-logo { display: block; object-fit: contain; background: #0B0D10; border: 1px solid rgba(255,255,255,.08); }
+  :root[data-theme="light"] .brand-logo { background: #FFFFFF; border-color: rgb(0 0 0 / 0.1); }
   ::selection { background: #E63946; color: #F5F5F3; }
 
   /* Dark is the default brand look; light overrides the same tokens so
@@ -804,7 +807,7 @@ function renderLogin() {
           ${gaugeHtml({ id: "login", value: 82, max: 100, label: "MR. KLIN", display: "READY", boot: true })}
         </div>
         <div class="relative">
-          <img src="images/mrklin-logo.jpg" width="500" height="500" alt="Mr. Klin Trading &amp; Services Corporation" class="h-28 w-56 rounded-2xl object-cover ring-1 ring-white/10">
+          <img src="images/logo.png" width="450" height="246" alt="Mr. Klin Trading &amp; Services Corporation" class="h-16 w-auto rounded-xl bg-[#0B0D10] px-2 py-0.5 ring-1 ring-white/10">
         </div>
         <div class="relative">
           <p class="font-heading text-4xl font-bold uppercase leading-tight">Every customer channel,<br><span class="text-brand-red">one instrument cluster.</span></p>
@@ -815,7 +818,7 @@ function renderLogin() {
       <div class="flex flex-1 items-center justify-center p-4 sm:p-8">
       <div class="w-full max-w-sm">
         <div class="mb-8">
-          <img src="images/mrklin-logo.jpg" width="500" height="500" alt="Mr. Klin Trading &amp; Services Corporation" class="mb-6 h-24 w-48 rounded-2xl object-cover ring-1 ring-line/10 lg:hidden">
+          <img src="images/logo.png" width="450" height="246" alt="Mr. Klin Trading &amp; Services Corporation" class="brand-logo mb-6 h-14 w-auto rounded-xl px-2 py-0.5 lg:hidden">
           <h1 class="font-heading text-2xl font-semibold text-ink">Welcome back</h1>
           <p class="mt-1 text-sm text-muted">Sign in to the MR. Klin dashboard.</p>
         </div>
@@ -1993,8 +1996,8 @@ function renderSidebar() {
 
   sidebar.innerHTML = `
     <div class="flex items-center gap-3 border-b border-line/10 px-4 py-4 ${collapsed ? "lg:justify-center lg:px-2" : ""}">
-      <img src="images/mrklin-logo.jpg" width="500" height="500" alt="Mr. Klin Trading &amp; Services Corporation" class="h-20 w-40 shrink-0 rounded-xl object-cover ring-1 ring-line/10 ${hideLabel}">
-      ${collapsed ? `<img src="images/mrklin-logo.jpg" width="500" height="500" alt="Mr. Klin" class="hidden h-12 w-12 shrink-0 rounded-lg ring-1 ring-line/10 lg:block">` : ""}
+      <img src="images/logo.png" width="450" height="246" alt="Mr. Klin Trading &amp; Services Corporation" class="brand-logo h-12 w-auto shrink-0 rounded-lg px-1.5 py-0.5 ${hideLabel}">
+      ${collapsed ? `<img src="images/logo.png" width="450" height="246" alt="Mr. Klin" class="brand-logo hidden h-10 w-12 shrink-0 rounded-lg p-0.5 lg:block">` : ""}
       <button onclick="closeMobileSidebar()" aria-label="Close menu" class="ml-auto flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-line/5 hover:text-ink lg:hidden">
         <i data-lucide="x" class="h-4 w-4"></i>
       </button>
