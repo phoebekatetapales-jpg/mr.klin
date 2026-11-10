@@ -313,6 +313,15 @@
   .bk-done strong { font-size: 16px; }
   .bk-done span { font-size: 14px; color: var(--body); }
   .bk-note { margin: 14px 0 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+  .bk-lang { display: inline-flex; margin-top: 12px; padding: 3px; gap: 2px; border: 1px solid var(--outline); border-radius: 999px; }
+  .bk-lang button { min-height: 32px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .bk-lang button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+  .bk-lang button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bk-reminders { margin-top: 20px; padding: 16px 18px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 16px; background: color-mix(in srgb, var(--accent) 8%, var(--cell)); }
+  .bk-reminders ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .bk-reminders li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.5; color: var(--text); }
+  .bk-reminders svg { flex: none; margin-top: 1px; color: var(--accent); }
+  .bk-reminders #bkDownAmt { color: var(--muted); }
   .bk-body :focus-visible, .bk-foot :focus-visible, .bk-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   @media (max-width: 560px) {
     .bk-head, .bk-steps, .bk-body, .bk-foot { padding-inline: 18px; }
@@ -947,80 +956,97 @@
 <dialog class="booking" id="booking" aria-labelledby="bkTitle">
   <div class="bk-head">
     <div>
-      <span class="kicker">Book a service</span>
-      <h2 class="display" id="bkTitle">Get your estimate &amp; pick a slot</h2>
+      <span class="kicker" data-i18n="kicker">Book a service</span>
+      <h2 class="display" id="bkTitle" data-i18n="title">Get your estimate &amp; pick a slot</h2>
+      <div class="bk-lang" role="group" aria-label="Language" data-i18n-aria="langGroup">
+        <button type="button" data-lang="en" aria-pressed="true">English</button>
+        <button type="button" data-lang="tl" aria-pressed="false">Tagalog</button>
+      </div>
     </div>
-    <button type="button" class="bk-close" data-close aria-label="Close">
+    <button type="button" class="bk-close" data-close aria-label="Close" data-i18n-aria="close">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
     </button>
   </div>
   <ol class="bk-steps" aria-label="Booking steps">
-    <li class="current">1. Car &amp; services</li>
-    <li>2. Date &amp; time</li>
-    <li>3. Your details</li>
+    <li class="current" data-i18n="step1">1. Car &amp; services</li>
+    <li data-i18n="step2">2. Date &amp; time</li>
+    <li data-i18n="step3">3. Your details</li>
   </ol>
 
   <div class="bk-body">
     <!-- Step 1 -->
     <section class="bk-panel" data-step="0">
       <div class="bk-group">
-        <span class="bk-label" id="bkVehLabel">Your vehicle</span>
+        <span class="bk-label" id="bkVehLabel" data-i18n="vehLabel">Your vehicle</span>
         <div class="bk-chips" id="bkVehicles" role="radiogroup" aria-labelledby="bkVehLabel"></div>
       </div>
       <div class="bk-group">
-        <span class="bk-label">Services (choose one or more)</span>
+        <span class="bk-label" data-i18n="svcLabel">Services (choose one or more)</span>
         <div class="bk-services" id="bkServices"></div>
-        <label class="bk-toggle"><input type="checkbox" id="bkMobile"> <span>Home / office service <small>— we come to you (fee confirmed by our team)</small></span></label>
+        <label class="bk-toggle"><input type="checkbox" id="bkMobile"> <span data-i18n-html="mobileToggle">Home / office service <small>— we come to you (fee confirmed by our team)</small></span></label>
       </div>
     </section>
 
     <!-- Step 2 -->
     <section class="bk-panel" data-step="1" hidden>
       <div class="bk-group">
-        <span class="bk-label">Choose a date</span>
+        <span class="bk-label" data-i18n="dateLabel">Choose a date</span>
         <div class="bk-cal">
           <div class="bk-cal-head">
-            <button type="button" class="bk-cal-nav" id="bkPrev" aria-label="Previous month">‹</button>
+            <button type="button" class="bk-cal-nav" id="bkPrev" aria-label="Previous month" data-i18n-aria="prevMonth">‹</button>
             <strong id="bkMonth" aria-live="polite"></strong>
-            <button type="button" class="bk-cal-nav" id="bkNext" aria-label="Next month">›</button>
+            <button type="button" class="bk-cal-nav" id="bkNext" aria-label="Next month" data-i18n-aria="nextMonth">›</button>
           </div>
           <div class="bk-grid" id="bkGrid"></div>
         </div>
       </div>
       <div class="bk-group">
-        <span class="bk-label" id="bkTimeLabel">Choose a time</span>
+        <span class="bk-label" id="bkTimeLabel" data-i18n="timeLabel">Choose a time</span>
         <div id="bkTimes" class="bk-times" role="radiogroup" aria-labelledby="bkTimeLabel"></div>
-        <p class="bk-hint" id="bkTimeHint">Pick a date first.</p>
+        <p class="bk-hint" id="bkTimeHint" data-i18n="timeHint">Pick a date first.</p>
       </div>
     </section>
 
     <!-- Step 3 -->
     <section class="bk-panel" data-step="2" hidden>
       <div class="bk-fields">
-        <label class="bk-field">Full name<input id="bkName" autocomplete="name" required></label>
-        <label class="bk-field">Mobile number<input id="bkPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XX-XXX-XXXX" required></label>
-        <label class="bk-field">Car make &amp; model<input id="bkCar" placeholder="e.g. Toyota Fortuner 2021"></label>
-        <label class="bk-field">Plate number <small style="color:var(--muted)">(optional)</small><input id="bkPlate"></label>
-        <label class="bk-field full" id="bkAddrWrap" hidden>Service address<input id="bkAddr" autocomplete="street-address" placeholder="Where should we go?"></label>
-        <label class="bk-field full">Notes <small style="color:var(--muted)">(optional)</small><textarea id="bkNotes" placeholder="Anything we should know — stains, dents, warning lights…"></textarea></label>
+        <label class="bk-field"><span data-i18n="name">Full name</span><input id="bkName" autocomplete="name" required></label>
+        <label class="bk-field"><span data-i18n="phone">Mobile number</span><input id="bkPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XX-XXX-XXXX" required></label>
+        <label class="bk-field"><span data-i18n="car">Car make &amp; model</span><input id="bkCar" placeholder="e.g. Toyota Fortuner 2021" data-i18n-ph="carPh"></label>
+        <label class="bk-field"><span data-i18n-html="plate">Plate number <small style="color:var(--muted)">(optional)</small></span><input id="bkPlate"></label>
+        <label class="bk-field full" id="bkAddrWrap" hidden><span data-i18n="addr">Service address</span><input id="bkAddr" autocomplete="street-address" placeholder="Where should we go?" data-i18n-ph="addrPh"></label>
+        <label class="bk-field full"><span data-i18n-html="notes">Notes <small style="color:var(--muted)">(optional)</small></span><textarea id="bkNotes" placeholder="Anything we should know — stains, dents, warning lights…" data-i18n-ph="notesPh"></textarea></label>
+      </div>
+      <div class="bk-reminders" role="note" aria-labelledby="bkRemTitle">
+        <span class="bk-label" id="bkRemTitle" data-i18n="remTitle">Before your visit</span>
+        <ul>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+            <span data-i18n-html="remOrcr">Please bring your vehicle's <b>OR/CR</b> (Official Receipt and Certificate of Registration).</span>
+          </li>
+          <li>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/></svg>
+            <span><span data-i18n-html="remDown">A downpayment of <b>at least 50%</b> of your total estimated price is required to secure your booking.</span> <span id="bkDownAmt"></span></span>
+          </li>
+        </ul>
       </div>
       <div class="bk-summary">
-        <span class="bk-label">Your booking</span>
+        <span class="bk-label" data-i18n="summary">Your booking</span>
         <dl id="bkSummary"></dl>
       </div>
       <input type="text" id="bkCompany" name="company" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
       <div class="bk-done" id="bkDone" role="status" hidden>
         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
-        <div><strong>Booking received!</strong><span>We'll text or call you to confirm your slot and final price.</span></div>
+        <div><strong data-i18n="doneTitle">Booking received!</strong><span data-i18n="doneText">We'll text or call you to confirm your slot and final price.</span></div>
       </div>
       <div id="bkSendWrap" hidden>
         <p class="bk-note" id="bkSendIntro" style="margin-top:18px"></p>
         <div class="bk-send">
-          <a class="btn btn-primary" id="bkMessenger" target="_blank" rel="noopener">Send via Messenger</a>
-          <a class="btn btn-ghost" id="bkSms">Send via SMS</a>
-          <button type="button" class="btn btn-ghost" id="bkCopy">Copy details</button>
+          <a class="btn btn-primary" id="bkMessenger" target="_blank" rel="noopener" data-i18n="sendMessenger">Send via Messenger</a>
+          <a class="btn btn-ghost" id="bkSms" data-i18n="sendSms">Send via SMS</a>
+          <button type="button" class="btn btn-ghost" id="bkCopy" data-i18n="copy">Copy details</button>
         </div>
-        <p class="bk-note">Prefer to talk? Call <a href="tel:09178805755">0917-880-5755</a>.</p>
+        <p class="bk-note" data-i18n-html="call">Prefer to talk? Call <a href="tel:09178805755">0917-880-5755</a>.</p>
       </div>
     </section>
     <p class="bk-error" id="bkError" role="alert" hidden></p>
@@ -1028,12 +1054,12 @@
 
   <div class="bk-foot">
     <div class="bk-total">
-      <small>Estimated total</small>
+      <small data-i18n="totalLabel">Estimated total</small>
       <strong id="bkTotal">₱0</strong>
       <span id="bkTotalNote">Select your vehicle and services</span>
     </div>
     <div class="bk-actions">
-      <button type="button" class="btn btn-ghost" id="bkBack" hidden>Back</button>
+      <button type="button" class="btn btn-ghost" id="bkBack" hidden data-i18n="back">Back</button>
       <button type="button" class="btn btn-primary" id="bkNextStep">Next: pick a date</button>
     </div>
   </div>
@@ -1041,13 +1067,107 @@
 
 <script>
   // Booking & estimate: vehicle + services -> calendar slot -> contact details,
-  // then the request is sent to the shop by Messenger or SMS (no backend).
+  // then the request is saved to the dashboard (or sent by Messenger / SMS as a fallback).
+  // The customer can switch the dialog between English and Tagalog; what is sent to
+  // the shop always stays in English so the dashboard reads the same.
   (function () {
     var SHOP_SMS = '09178805755';
     var SHOP_MESSENGER = 'https://m.me/mrklintradingandservicescorp';
     var BOOKINGS_API = 'https://mr-klin.vercel.app/api/bookings'; // shows up on the Mr. Klin dashboard
     var BOOK_AHEAD_DAYS = 60;
+    var DOWNPAYMENT = 0.5; // at least 50% of the estimated total
     var TIMES = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
+
+    var TEXT = {
+      en: {
+        langGroup: 'Language', close: 'Close',
+        kicker: 'Book a service', title: 'Get your estimate & pick a slot',
+        step1: '1. Car & services', step2: '2. Date & time', step3: '3. Your details',
+        vehLabel: 'Your vehicle', svcLabel: 'Services (choose one or more)',
+        mobileToggle: 'Home / office service <small>— we come to you (fee confirmed by our team)</small>',
+        dateLabel: 'Choose a date', prevMonth: 'Previous month', nextMonth: 'Next month',
+        timeLabel: 'Choose a time', timeHint: 'Pick a date first.',
+        name: 'Full name', phone: 'Mobile number', car: 'Car make & model', carPh: 'e.g. Toyota Fortuner 2021',
+        plate: 'Plate number <small style="color:var(--muted)">(optional)</small>',
+        addr: 'Service address', addrPh: 'Where should we go?',
+        notes: 'Notes <small style="color:var(--muted)">(optional)</small>',
+        notesPh: 'Anything we should know — stains, dents, warning lights…',
+        remTitle: 'Before your visit',
+        remOrcr: "Please bring your vehicle's <b>OR/CR</b> (Official Receipt and Certificate of Registration).",
+        remDown: 'A downpayment of <b>at least 50%</b> of your total estimated price is required to secure your booking.',
+        downAmt: 'For this booking, that is at least {amt}.',
+        downAmtFrom: 'For this booking, that is at least {amt} (more if the final price is higher).',
+        downQuote: 'The amount will be based on your quote after inspection.',
+        summary: 'Your booking', doneTitle: 'Booking received!',
+        doneText: "We'll text or call you to confirm your slot and final price.",
+        sendMessenger: 'Send via Messenger', sendSms: 'Send via SMS', copy: 'Copy details', copied: 'Copied!',
+        copyPrompt: 'Copy your booking details:',
+        call: 'Prefer to talk? Call <a href="tel:09178805755">0917-880-5755</a>.',
+        totalLabel: 'Estimated total', back: 'Back',
+        next: ['Next: pick a date', 'Next: your details', 'Confirm booking'], sending: 'Sending…',
+        from: 'from ', quoteAfter: 'Quote after inspection',
+        noteVehicle: 'Select your vehicle to see prices', noteService: 'Select at least one service',
+        noteQuoted: 'Quoted after inspection', noteFinal: 'Final price confirmed after inspection',
+        notePlusQuote: function (n) { return '+ ' + n + ' service' + (n > 1 ? 's' : '') + ' quoted after inspection'; },
+        rowVehicle: 'Vehicle', rowServices: 'Services', rowDate: 'Date', rowTime: 'Time', rowWhere: 'Where',
+        rowEstimate: 'Estimate', rowDown: 'Downpayment (50%)',
+        whereHome: 'Home / office service', whereShop: 'At the shop — 74 M.L Quezon St., Bagumbayan, Taguig',
+        quoteFor: ' + quote for ', afterQuote: 'After your quote',
+        errVehicle: 'Please choose your vehicle type.', errService: 'Please choose at least one service.',
+        errDate: 'Please choose a date.', errTime: 'Please choose a time.',
+        errName: 'Please enter your name.', errPhone: 'Please enter a valid mobile number.',
+        errAddr: 'Please enter the address for the home / office service.',
+        sentIntro: 'Want a faster reply? You can also send these details to us directly:',
+        failIntro: "We couldn't save your booking online just now. Please send it to us with one tap instead:",
+        months: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+        days: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+        weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+      },
+      tl: {
+        langGroup: 'Wika', close: 'Isara',
+        kicker: 'Mag-book ng serbisyo', title: 'Alamin ang presyo at pumili ng schedule',
+        step1: '1. Sasakyan at serbisyo', step2: '2. Petsa at oras', step3: '3. Iyong detalye',
+        vehLabel: 'Ang iyong sasakyan', svcLabel: 'Mga serbisyo (pumili ng isa o higit pa)',
+        mobileToggle: 'Home / office service <small>— kami ang pupunta sa inyo (kukumpirmahin ng aming team ang bayad)</small>',
+        dateLabel: 'Pumili ng petsa', prevMonth: 'Nakaraang buwan', nextMonth: 'Susunod na buwan',
+        timeLabel: 'Pumili ng oras', timeHint: 'Pumili muna ng petsa.',
+        name: 'Buong pangalan', phone: 'Mobile number', car: 'Brand at modelo ng sasakyan', carPh: 'hal. Toyota Fortuner 2021',
+        plate: 'Plate number <small style="color:var(--muted)">(opsyonal)</small>',
+        addr: 'Address ng serbisyo', addrPh: 'Saan kami pupunta?',
+        notes: 'Mga tala <small style="color:var(--muted)">(opsyonal)</small>',
+        notesPh: 'May dapat ba kaming malaman? — mantsa, yupi, warning lights…',
+        remTitle: 'Bago ka pumunta',
+        remOrcr: 'Pakidala ang <b>OR/CR</b> ng iyong sasakyan (Official Receipt at Certificate of Registration).',
+        remDown: 'Kailangan ng downpayment na <b>hindi bababa sa 50%</b> ng kabuuang tinatayang presyo para ma-secure ang iyong booking.',
+        downAmt: 'Para sa booking na ito, hindi bababa sa {amt}.',
+        downAmtFrom: 'Para sa booking na ito, hindi bababa sa {amt} (mas mataas kung tataas ang final na presyo).',
+        downQuote: 'Ibabatay ang halaga sa presyo pagkatapos ng inspeksyon.',
+        summary: 'Ang iyong booking', doneTitle: 'Natanggap na ang booking mo!',
+        doneText: 'Ite-text o tatawagan ka namin para kumpirmahin ang schedule at final na presyo.',
+        sendMessenger: 'Ipadala sa Messenger', sendSms: 'Ipadala sa SMS', copy: 'Kopyahin ang detalye', copied: 'Nakopya na!',
+        copyPrompt: 'Kopyahin ang detalye ng booking:',
+        call: 'Mas gusto mong tumawag? Tawagan kami sa <a href="tel:09178805755">0917-880-5755</a>.',
+        totalLabel: 'Tinatayang kabuuan', back: 'Bumalik',
+        next: ['Susunod: pumili ng petsa', 'Susunod: iyong detalye', 'Kumpirmahin ang booking'], sending: 'Ipinapadala…',
+        from: 'mula ', quoteAfter: 'Presyo pagkatapos ng inspeksyon',
+        noteVehicle: 'Piliin ang sasakyan para makita ang presyo', noteService: 'Pumili ng kahit isang serbisyo',
+        noteQuoted: 'Presyo pagkatapos ng inspeksyon', noteFinal: 'Kukumpirmahin ang final na presyo pagkatapos ng inspeksyon',
+        notePlusQuote: function (n) { return '+ ' + n + ' serbisyong ipe-presyo pagkatapos ng inspeksyon'; },
+        rowVehicle: 'Sasakyan', rowServices: 'Mga serbisyo', rowDate: 'Petsa', rowTime: 'Oras', rowWhere: 'Saan',
+        rowEstimate: 'Tinatayang presyo', rowDown: 'Downpayment (50%)',
+        whereHome: 'Home / office service', whereShop: 'Sa shop — 74 M.L Quezon St., Bagumbayan, Taguig',
+        quoteFor: ' + quote para sa ', afterQuote: 'Pagkatapos ng quote',
+        errVehicle: 'Pakipili ang uri ng iyong sasakyan.', errService: 'Pumili ng kahit isang serbisyo.',
+        errDate: 'Pakipili ng petsa.', errTime: 'Pakipili ng oras.',
+        errName: 'Pakilagay ang iyong pangalan.', errPhone: 'Pakilagay ang tamang mobile number.',
+        errAddr: 'Pakilagay ang address para sa home / office service.',
+        sentIntro: 'Gusto mo ng mas mabilis na sagot? Puwede mo ring ipadala sa amin ang detalye nang direkta:',
+        failIntro: 'Hindi namin na-save online ang booking mo ngayon. Ipadala na lang ito sa amin sa isang tap:',
+        months: ['Enero', 'Pebrero', 'Marso', 'Abril', 'Mayo', 'Hunyo', 'Hulyo', 'Agosto', 'Setyembre', 'Oktubre', 'Nobyembre', 'Disyembre'],
+        days: ['Lin', 'Lun', 'Mar', 'Miy', 'Huw', 'Biy', 'Sab'],
+        weekdays: ['Linggo', 'Lunes', 'Martes', 'Miyerkules', 'Huwebes', 'Biyernes', 'Sabado']
+      }
+    };
 
     // size: 0 = small, 1 = mid-size, 2 = large
     var VEHICLES = [
@@ -1059,18 +1179,30 @@
       { id: 'van', label: 'Van / MPV', size: 2 }
     ];
     // price: [small, mid-size, large]; from: price is a starting point; null price = quoted after inspection
+    // name/desc are English (also what is sent to the shop); tl holds the Tagalog [name, desc] shown on screen
     var SERVICES = [
-      { id: 'spa', name: 'Auto Spa Package', desc: 'Wash, asphalt removal, machine wax, engine wash, hyperdressing', price: [2250, 2590, 2930] },
-      { id: 'interior', name: 'Interior Detail', desc: 'Full cabin clean, priced by vehicle size', price: [4000, 5000, 6000], group: 'interior' },
-      { id: 'interior-deep', name: 'Interior Detail + carpet dismantle', desc: 'Seats and carpets out for a deep clean', price: [5500, 6500, 7500], group: 'interior' },
-      { id: 'exterior', name: 'Exterior Detail', desc: 'Full exterior treatment', price: [4000, 6500, 9000] },
-      { id: 'underchassis', name: 'Underchassis & rustproofing', desc: 'Rust & corrosion prevention, chassis protection', price: [1800, 1800, 1800], from: true },
-      { id: 'ceramic', name: 'Nano ceramic coating', desc: 'Long-lasting gloss and paint protection', price: null },
-      { id: 'tint', name: 'Tint film / PPF', desc: 'Window tint or paint protection film', price: null },
-      { id: 'pms', name: 'Preventive maintenance (PMS)', desc: 'Oil, filters, battery & tire services', price: null },
-      { id: 'aircon', name: 'Aircon service', desc: 'Cleaning, recharge & check-up', price: null },
-      { id: 'body', name: 'Body repair & paint', desc: 'Dents, scratches, repainting', price: null },
-      { id: 'accessories', name: 'Accessories & electrical', desc: 'Upholstery, sounds & lights, dashcam, central lock', price: null }
+      { id: 'spa', name: 'Auto Spa Package', desc: 'Wash, asphalt removal, machine wax, engine wash, hyperdressing', price: [2250, 2590, 2930],
+        tl: ['Auto Spa Package', 'Car wash, pagtanggal ng aspalto, machine wax, engine wash, hyperdressing'] },
+      { id: 'interior', name: 'Interior Detail', desc: 'Full cabin clean, priced by vehicle size', price: [4000, 5000, 6000], group: 'interior',
+        tl: ['Interior Detail', 'Buong linis ng loob ng sasakyan, presyo ayon sa laki'] },
+      { id: 'interior-deep', name: 'Interior Detail + carpet dismantle', desc: 'Seats and carpets out for a deep clean', price: [5500, 6500, 7500], group: 'interior',
+        tl: ['Interior Detail + pagtanggal ng carpet', 'Tinatanggal ang upuan at carpet para sa malalimang linis'] },
+      { id: 'exterior', name: 'Exterior Detail', desc: 'Full exterior treatment', price: [4000, 6500, 9000],
+        tl: ['Exterior Detail', 'Buong treatment sa labas ng sasakyan'] },
+      { id: 'underchassis', name: 'Underchassis & rustproofing', desc: 'Rust & corrosion prevention, chassis protection', price: [1800, 1800, 1800], from: true,
+        tl: ['Underchassis at rustproofing', 'Proteksyon laban sa kalawang at kaagnasan ng chassis'] },
+      { id: 'ceramic', name: 'Nano ceramic coating', desc: 'Long-lasting gloss and paint protection', price: null,
+        tl: ['Nano ceramic coating', 'Pangmatagalang kintab at proteksyon ng pintura'] },
+      { id: 'tint', name: 'Tint film / PPF', desc: 'Window tint or paint protection film', price: null,
+        tl: ['Tint film / PPF', 'Tint ng bintana o paint protection film'] },
+      { id: 'pms', name: 'Preventive maintenance (PMS)', desc: 'Oil, filters, battery & tire services', price: null,
+        tl: ['Preventive maintenance (PMS)', 'Langis, filter, baterya at gulong'] },
+      { id: 'aircon', name: 'Aircon service', desc: 'Cleaning, recharge & check-up', price: null,
+        tl: ['Aircon service', 'Paglilinis, recharge at check-up'] },
+      { id: 'body', name: 'Body repair & paint', desc: 'Dents, scratches, repainting', price: null,
+        tl: ['Body repair at pintura', 'Yupi, gasgas, repainting'] },
+      { id: 'accessories', name: 'Accessories & electrical', desc: 'Upholstery, sounds & lights, dashcam, central lock', price: null,
+        tl: ['Accessories at electrical', 'Upholstery, sounds at ilaw, dashcam, central lock'] }
     ];
 
     var dlg = document.getElementById('booking');
@@ -1079,32 +1211,70 @@
     var peso = function (n) { return '₱' + n.toLocaleString('en-PH'); };
     var today = new Date(); today.setHours(0, 0, 0, 0);
     var lastDay = new Date(today); lastDay.setDate(lastDay.getDate() + BOOK_AHEAD_DAYS);
-    var state = { step: 0, vehicle: null, services: {}, date: null, time: null, view: new Date(today.getFullYear(), today.getMonth(), 1) };
+    var state = { step: 0, vehicle: null, services: {}, date: null, time: null, view: new Date(today.getFullYear(), today.getMonth(), 1), error: '', intro: '' };
+
+    // ----- Language -----
+    var lang = 'en';
+    try { if (localStorage.getItem('mrklin-booking-lang') === 'tl') lang = 'tl'; } catch (e) {}
+    function t(key) { return TEXT[lang][key]; }
+    function svcName(s) { return lang === 'tl' ? s.tl[0] : s.name; }
+    function svcDesc(s) { return lang === 'tl' ? s.tl[1] : s.desc; }
+    function applyLang() {
+      dlg.lang = lang === 'tl' ? 'tl' : 'en';
+      dlg.querySelectorAll('[data-i18n]').forEach(function (el) { el.textContent = t(el.dataset.i18n); });
+      dlg.querySelectorAll('[data-i18n-html]').forEach(function (el) { el.innerHTML = t(el.dataset.i18nHtml); });
+      dlg.querySelectorAll('[data-i18n-ph]').forEach(function (el) { el.placeholder = t(el.dataset.i18nPh); });
+      dlg.querySelectorAll('[data-i18n-aria]').forEach(function (el) { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+      dlg.querySelectorAll('[data-lang]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.lang === lang)); });
+      SERVICES.forEach(function (s) {
+        dlg.querySelector('[data-svc-name="' + s.id + '"]').textContent = svcName(s);
+        dlg.querySelector('[data-svc-desc="' + s.id + '"]').textContent = svcDesc(s);
+      });
+      if (!$('bkNextStep').disabled) $('bkNextStep').textContent = t('next')[state.step];
+      if (state.error) showError(t(state.error));
+      if (state.intro) $('bkSendIntro').textContent = t(state.intro);
+      renderPrices();
+      if (state.step === 1) { renderCalendar(); renderTimes(); }
+      if (state.step === 2) renderSummary();
+    }
+    dlg.querySelector('.bk-lang').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-lang]'); if (!b || b.dataset.lang === lang) return;
+      lang = b.dataset.lang;
+      try { localStorage.setItem('mrklin-booking-lang', lang); } catch (err) {}
+      applyLang();
+    });
 
     // ----- Step 1: vehicle + services -----
     $('bkVehicles').innerHTML = VEHICLES.map(function (v) {
       return '<label class="bk-chip"><input type="radio" name="bkVehicle" value="' + v.id + '"><span>' + v.label + '</span></label>';
     }).join('');
     $('bkServices').innerHTML = SERVICES.map(function (s) {
-      return '<label class="bk-svc"><input type="checkbox" value="' + s.id + '"><div><b>' + s.name + '</b><small>' + s.desc + '</small></div><span class="amt" data-amt="' + s.id + '"></span></label>';
+      return '<label class="bk-svc"><input type="checkbox" value="' + s.id + '"><div><b data-svc-name="' + s.id + '"></b><small data-svc-desc="' + s.id + '"></small></div><span class="amt" data-amt="' + s.id + '"></span></label>';
     }).join('');
 
     function vehicle() { return VEHICLES.filter(function (v) { return v.id === state.vehicle; })[0]; }
     function chosen() { return SERVICES.filter(function (s) { return state.services[s.id]; }); }
     function priceText(s) {
-      if (!s.price) return 'Quote after inspection';
+      if (!s.price) return t('quoteAfter');
       var v = vehicle();
-      if (!v) return (s.from ? 'from ' : '') + peso(Math.min.apply(null, s.price)) + (s.from ? '' : '+');
-      return (s.from ? 'from ' : '') + peso(s.price[v.size]);
+      if (!v) return (s.from ? t('from') : '') + peso(Math.min.apply(null, s.price)) + (s.from ? '' : '+');
+      return (s.from ? t('from') : '') + peso(s.price[v.size]);
     }
     function estimate() {
       var v = vehicle(), list = chosen(), total = 0, quote = [], from = false;
       list.forEach(function (s) {
-        if (!s.price) { quote.push(s.name); return; }
+        if (!s.price) { quote.push(s); return; }
         if (v) total += s.price[v.size];
         if (s.from) from = true;
       });
       return { total: total, quote: quote, from: from, priced: list.length - quote.length };
+    }
+    function downpayment(e) { return Math.ceil(e.total * DOWNPAYMENT); }
+    // Estimate in words; en = true gives the English version that is sent to the shop
+    function estimateText(e, en) {
+      var L = en ? TEXT.en : TEXT[lang], name = en ? function (s) { return s.name; } : svcName;
+      return (e.priced ? (e.from ? L.from : '') + peso(e.total) : (en ? 'For quote' : '—')) +
+        (e.quote.length ? L.quoteFor + e.quote.map(name).join(', ') : '');
     }
     function renderPrices() {
       SERVICES.forEach(function (s) {
@@ -1113,12 +1283,12 @@
         el.classList.toggle('quote', !s.price);
       });
       var e = estimate(), note;
-      $('bkTotal').textContent = (e.from ? 'from ' : '') + peso(e.total);
-      if (!state.vehicle) note = 'Select your vehicle to see prices';
-      else if (!chosen().length) note = 'Select at least one service';
-      else if (e.quote.length && !e.priced) note = 'Quoted after inspection';
-      else if (e.quote.length) note = '+ ' + e.quote.length + ' service' + (e.quote.length > 1 ? 's' : '') + ' quoted after inspection';
-      else note = 'Final price confirmed after inspection';
+      $('bkTotal').textContent = (e.from ? t('from') : '') + peso(e.total);
+      if (!state.vehicle) note = t('noteVehicle');
+      else if (!chosen().length) note = t('noteService');
+      else if (e.quote.length && !e.priced) note = t('noteQuoted');
+      else if (e.quote.length) note = t('notePlusQuote')(e.quote.length);
+      else note = t('noteFinal');
       $('bkTotalNote').textContent = note;
     }
     $('bkVehicles').addEventListener('change', function (e) { state.vehicle = e.target.value; renderPrices(); });
@@ -1139,21 +1309,20 @@
     $('bkMobile').addEventListener('change', function () { $('bkAddrWrap').hidden = !this.checked; });
 
     // ----- Step 2: calendar + time -----
-    var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     function sameDay(a, b) { return a && b && a.getTime() === b.getTime(); }
     function renderCalendar() {
       var y = state.view.getFullYear(), m = state.view.getMonth();
-      $('bkMonth').textContent = MONTHS[m] + ' ' + y;
+      $('bkMonth').textContent = t('months')[m] + ' ' + y;
       $('bkPrev').disabled = y === today.getFullYear() && m === today.getMonth();
       $('bkNext').disabled = new Date(y, m + 1, 1) > lastDay;
-      var html = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(function (d) { return '<span class="dow" aria-hidden="true">' + d + '</span>'; }).join('');
+      var html = t('days').map(function (d) { return '<span class="dow" aria-hidden="true">' + d + '</span>'; }).join('');
       var first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
       for (var i = 0; i < first; i++) html += '<span></span>';
       for (var d = 1; d <= days; d++) {
         var date = new Date(y, m, d), off = date < today || date > lastDay;
         var cls = 'bk-day' + (sameDay(date, today) ? ' today' : '') + (sameDay(date, state.date) ? ' selected' : '');
         html += '<button type="button" class="' + cls + '" data-day="' + d + '"' + (off ? ' disabled' : '') +
-          ' aria-label="' + date.toDateString() + '"' + (sameDay(date, state.date) ? ' aria-pressed="true"' : '') + '>' + d + '</button>';
+          ' aria-label="' + dateText(date, lang) + '"' + (sameDay(date, state.date) ? ' aria-pressed="true"' : '') + '>' + d + '</button>';
       }
       $('bkGrid').innerHTML = html;
     }
@@ -1161,12 +1330,12 @@
       if (!state.date) { $('bkTimes').innerHTML = ''; $('bkTimeHint').hidden = false; return; }
       $('bkTimeHint').hidden = true;
       var now = new Date();
-      $('bkTimes').innerHTML = TIMES.map(function (t) {
-        var parts = t.match(/(\d+):(\d+) (AM|PM)/), h = (+parts[1] % 12) + (parts[3] === 'PM' ? 12 : 0);
+      $('bkTimes').innerHTML = TIMES.map(function (tm) {
+        var parts = tm.match(/(\d+):(\d+) (AM|PM)/), h = (+parts[1] % 12) + (parts[3] === 'PM' ? 12 : 0);
         var slot = new Date(state.date); slot.setHours(h, +parts[2]);
         var past = slot < new Date(now.getTime() + 60 * 60 * 1000); // at least an hour's notice
-        return '<label class="bk-chip"><input type="radio" name="bkTime" value="' + t + '"' + (state.time === t ? ' checked' : '') + (past ? ' disabled' : '') +
-          '><span' + (past ? ' style="opacity:.35"' : '') + '>' + t + '</span></label>';
+        return '<label class="bk-chip"><input type="radio" name="bkTime" value="' + tm + '"' + (state.time === tm ? ' checked' : '') + (past ? ' disabled' : '') +
+          '><span' + (past ? ' style="opacity:.35"' : '') + '>' + tm + '</span></label>';
       }).join('');
     }
     $('bkGrid').addEventListener('click', function (e) {
@@ -1179,19 +1348,26 @@
     $('bkNext').addEventListener('click', function () { state.view = new Date(state.view.getFullYear(), state.view.getMonth() + 1, 1); renderCalendar(); });
 
     // ----- Step 3: details, summary, send -----
-    function dateText() { return state.date.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }); }
+    // e.g. "Tuesday, November 10, 2026" / "Martes, Nobyembre 10, 2026"
+    function dateText(d, l) {
+      var L = TEXT[l || 'en'];
+      return L.weekdays[d.getDay()] + ', ' + L.months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+    }
     function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
     function renderSummary() {
       var e = estimate();
       var rows = [
-        ['Vehicle', vehicle().label],
-        ['Services', chosen().map(function (s) { return s.name; }).join(', ')],
-        ['Date', dateText()],
-        ['Time', state.time],
-        ['Where', $('bkMobile').checked ? 'Home / office service' : 'At the shop — 74 M.L Quezon St., Bagumbayan, Taguig'],
-        ['Estimate', (e.priced ? (e.from ? 'from ' : '') + peso(e.total) : '—') + (e.quote.length ? ' + quote for ' + e.quote.join(', ') : '')]
+        [t('rowVehicle'), vehicle().label],
+        [t('rowServices'), chosen().map(svcName).join(', ')],
+        [t('rowDate'), dateText(state.date, lang)],
+        [t('rowTime'), state.time],
+        [t('rowWhere'), $('bkMobile').checked ? t('whereHome') : t('whereShop')],
+        [t('rowEstimate'), estimateText(e)],
+        [t('rowDown'), e.priced ? (e.from || e.quote.length ? t('from') : '') + peso(downpayment(e)) : t('afterQuote')]
       ];
       $('bkSummary').innerHTML = rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
+      $('bkDownAmt').textContent = !e.priced ? t('downQuote') :
+        t(e.from || e.quote.length ? 'downAmtFrom' : 'downAmt').replace('{amt}', peso(downpayment(e)));
     }
     function message() {
       var e = estimate(), lines = [
@@ -1201,34 +1377,35 @@
         'Mobile: ' + $('bkPhone').value.trim(),
         'Vehicle: ' + vehicle().label + ($('bkCar').value.trim() ? ' — ' + $('bkCar').value.trim() : '') + ($('bkPlate').value.trim() ? ' (' + $('bkPlate').value.trim() + ')' : ''),
         'Services: ' + chosen().map(function (s) { return s.name; }).join(', '),
-        'Preferred schedule: ' + dateText() + ', ' + state.time,
+        'Preferred schedule: ' + dateText(state.date) + ', ' + state.time,
         'Location: ' + ($('bkMobile').checked ? 'Home/office service — ' + $('bkAddr').value.trim() : 'At the shop'),
-        'Website estimate: ' + (e.priced ? (e.from ? 'from ' : '') + peso(e.total) : 'for quote') + (e.quote.length ? ' + quote for ' + e.quote.join(', ') : '')
+        'Website estimate: ' + estimateText(e, true),
+        '50% downpayment: ' + (e.priced ? (e.from || e.quote.length ? 'from ' : '') + peso(downpayment(e)) : 'after quote')
       ];
       if ($('bkNotes').value.trim()) lines.push('Notes: ' + $('bkNotes').value.trim());
       return lines.join('\n');
     }
     $('bkCopy').addEventListener('click', function () {
       var btn = this, text = message();
-      var done = function () { btn.textContent = 'Copied!'; setTimeout(function () { btn.textContent = 'Copy details'; }, 2000); };
-      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt('Copy your booking details:', text); });
-      else prompt('Copy your booking details:', text);
+      var done = function () { btn.textContent = t('copied'); setTimeout(function () { btn.textContent = t('copy'); }, 2000); };
+      if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt(t('copyPrompt'), text); });
+      else prompt(t('copyPrompt'), text);
     });
 
     // ----- Step navigation -----
-    var NEXT_LABELS = ['Next: pick a date', 'Next: your details', 'Confirm booking'];
     function showError(msg) { $('bkError').textContent = msg; $('bkError').hidden = !msg; }
+    function setError(key) { state.error = key; showError(key ? t(key) : ''); }
     function validate() {
       if (state.step === 0) {
-        if (!state.vehicle) return 'Please choose your vehicle type.';
-        if (!chosen().length) return 'Please choose at least one service.';
+        if (!state.vehicle) return 'errVehicle';
+        if (!chosen().length) return 'errService';
       } else if (state.step === 1) {
-        if (!state.date) return 'Please choose a date.';
-        if (!state.time) return 'Please choose a time.';
+        if (!state.date) return 'errDate';
+        if (!state.time) return 'errTime';
       } else {
-        if (!$('bkName').value.trim()) return 'Please enter your name.';
-        if ($('bkPhone').value.replace(/\D/g, '').length < 10) return 'Please enter a valid mobile number.';
-        if ($('bkMobile').checked && !$('bkAddr').value.trim()) return 'Please enter the address for the home / office service.';
+        if (!$('bkName').value.trim()) return 'errName';
+        if ($('bkPhone').value.replace(/\D/g, '').length < 10) return 'errPhone';
+        if ($('bkMobile').checked && !$('bkAddr').value.trim()) return 'errAddr';
       }
       return '';
     }
@@ -1240,33 +1417,34 @@
         if (i === step) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current');
       });
       $('bkBack').hidden = step === 0;
-      $('bkNextStep').textContent = NEXT_LABELS[step];
-      $('bkNextStep').hidden = false;
       $('bkNextStep').disabled = false;
+      $('bkNextStep').textContent = t('next')[step];
+      $('bkNextStep').hidden = false;
       $('bkSendWrap').hidden = true;
       $('bkDone').hidden = true;
-      showError('');
+      state.intro = '';
+      setError('');
       if (step === 1) { renderCalendar(); renderTimes(); }
       if (step === 2) renderSummary();
       dlg.querySelector('.bk-body').scrollTop = 0;
     }
     $('bkNextStep').addEventListener('click', function () {
-      var err = validate(); showError(err); if (err) return;
+      var err = validate(); setError(err); if (err) return;
       if (state.step < 2) return go(state.step + 1);
       renderSummary();
       var btn = this, text = encodeURIComponent(message());
       $('bkMessenger').href = SHOP_MESSENGER + '?text=' + text;
       $('bkSms').href = 'sms:' + SHOP_SMS + '?&body=' + text;
-      btn.disabled = true; btn.textContent = 'Sending…';
+      btn.disabled = true; btn.textContent = t('sending');
       submitBooking().then(function () {
         $('bkDone').hidden = false;
-        $('bkSendIntro').textContent = 'Want a faster reply? You can also send these details to us directly:';
+        state.intro = 'sentIntro'; $('bkSendIntro').textContent = t('sentIntro');
         $('bkSendWrap').hidden = false;
         btn.hidden = true; $('bkBack').hidden = true;
         $('bkDone').scrollIntoView({ block: 'nearest' });
       }, function () {
         // Couldn't reach the booking system: fall back to sending it by message
-        $('bkSendIntro').textContent = "We couldn't save your booking online just now. Please send it to us with one tap instead:";
+        state.intro = 'failIntro'; $('bkSendIntro').textContent = t('failIntro');
         $('bkSendWrap').hidden = false;
         btn.hidden = true;
         $('bkMessenger').focus();
@@ -1287,7 +1465,7 @@
           date: state.date.getFullYear() + '-' + String(state.date.getMonth() + 1).padStart(2, '0') + '-' + String(state.date.getDate()).padStart(2, '0'),
           slot: state.time,
           location: mobile ? 'Home/office service — ' + $('bkAddr').value.trim() : 'At the shop',
-          estimate: (e.priced ? (e.from ? 'from ' : '') + peso(e.total) : 'For quote') + (e.quote.length ? ' + quote for ' + e.quote.join(', ') : ''),
+          estimate: estimateText(e, true),
           notes: $('bkNotes').value.trim(),
           company: $('bkCompany').value
         })
@@ -1298,7 +1476,7 @@
     $('bkBack').addEventListener('click', function () { go(state.step - 1); });
     // Editing details after a failed send brings the button back so the message is rebuilt
     dlg.querySelector('[data-step="2"] .bk-fields').addEventListener('input', function () {
-      if (!$('bkSendWrap').hidden && $('bkDone').hidden) { $('bkSendWrap').hidden = true; $('bkNextStep').hidden = false; $('bkNextStep').disabled = false; $('bkNextStep').textContent = NEXT_LABELS[2]; }
+      if (!$('bkSendWrap').hidden && $('bkDone').hidden) { $('bkSendWrap').hidden = true; state.intro = ''; $('bkNextStep').hidden = false; $('bkNextStep').disabled = false; $('bkNextStep').textContent = t('next')[2]; }
     });
 
     // ----- Open / close -----
@@ -1307,7 +1485,7 @@
     });
     dlg.querySelector('[data-close]').addEventListener('click', function () { dlg.close(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); });
-    renderPrices();
+    applyLang();
     // Other pages link to index.html#book to open the booking straight away
     if (location.hash === '#book') { go(0); dlg.showModal(); history.replaceState(null, '', location.pathname); }
   })();
