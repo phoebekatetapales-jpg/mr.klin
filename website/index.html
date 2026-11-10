@@ -1354,25 +1354,42 @@
       return L.weekdays[d.getDay()] + ', ' + L.months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
     }
     function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-    function renderSummary() {
-      var e = estimate();
-      var rows = [
-        [t('rowVehicle'), vehicle().label],
-        [t('rowServices'), chosen().map(svcName).join(', ')],
+    function summaryRows(withServices) {
+      var e = estimate(), rows = [[t('rowVehicle'), vehicle().label]];
+      if (withServices) rows.push([t('rowServices'), chosen().map(svcName).join(', ')]);
+      return rows.concat([
         [t('rowDate'), dateText(state.date, lang)],
         [t('rowTime'), state.time],
-        [t('rowWhere'), $('bkMobile').checked ? t('whereHome') : t('whereShop')],
+        [t('rowWhere'), $('bkMobile').checked ? t('whereHome') + ($('bkAddr').value.trim() ? ' — ' + $('bkAddr').value.trim() : '') : t('whereShop')],
         [t('rowEstimate'), estimateText(e)],
         [t('rowDown'), e.priced ? (e.from || e.quote.length ? t('from') : '') + peso(downpayment(e)) : t('afterQuote')]
-      ];
-      $('bkSummary').innerHTML = rows.map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
-      $('bkDownAmt').textContent = !e.priced ? t('downQuote') :
-        t(e.from || e.quote.length ? 'downAmtFrom' : 'downAmt').replace('{amt}', peso(downpayment(e)));
+      ]);
     }
-    function message() {
+    function downText() {
+      var e = estimate();
+      return !e.priced ? t('downQuote') : t(e.from || e.quote.length ? 'downAmtFrom' : 'downAmt').replace('{amt}', peso(downpayment(e)));
+    }
+    function renderSummary() {
+      $('bkSummary').innerHTML = summaryRows(true).map(function (r) { return '<dt>' + r[0] + '</dt><dd>' + esc(r[1]) + '</dd>'; }).join('');
+      $('bkDownAmt').textContent = downText();
+    }
+    // Saved on this device so booking.html can show the details in either language
+    function saveBooking(id) {
+      var keep = lang, car = $('bkCar').value.trim(), plate = $('bkPlate').value.trim();
+      var saved = { id: id || '', createdAt: Date.now(), name: $('bkName').value.trim(), phone: $('bkPhone').value.trim(),
+        car: car, plate: plate, notes: $('bkNotes').value.trim(), message: message(id), text: {} };
+      ['en', 'tl'].forEach(function (l) {
+        lang = l;
+        saved.text[l] = { rows: summaryRows(false), services: chosen().map(function (s) { return [svcName(s), priceText(s)]; }), down: downText() };
+      });
+      lang = keep;
+      try { localStorage.setItem('mrklin-last-booking', JSON.stringify(saved)); return true; } catch (err) { return false; }
+    }
+    function message(id) {
       var e = estimate(), lines = [
-        'Hi Mr. Klin! I would like to book a service.',
+        id ? 'Hi Mr. Klin! I booked a service on your website.' : 'Hi Mr. Klin! I would like to book a service.',
         '',
+        id ? 'Reference: ' + id : null,
         'Name: ' + $('bkName').value.trim(),
         'Mobile: ' + $('bkPhone').value.trim(),
         'Vehicle: ' + vehicle().label + ($('bkCar').value.trim() ? ' — ' + $('bkCar').value.trim() : '') + ($('bkPlate').value.trim() ? ' (' + $('bkPlate').value.trim() + ')' : ''),
@@ -1383,7 +1400,7 @@
         '50% downpayment: ' + (e.priced ? (e.from || e.quote.length ? 'from ' : '') + peso(downpayment(e)) : 'after quote')
       ];
       if ($('bkNotes').value.trim()) lines.push('Notes: ' + $('bkNotes').value.trim());
-      return lines.join('\n');
+      return lines.filter(function (l) { return l !== null; }).join('\n');
     }
     $('bkCopy').addEventListener('click', function () {
       var btn = this, text = message();
@@ -1436,7 +1453,9 @@
       $('bkMessenger').href = SHOP_MESSENGER + '?text=' + text;
       $('bkSms').href = 'sms:' + SHOP_SMS + '?&body=' + text;
       btn.disabled = true; btn.textContent = t('sending');
-      submitBooking().then(function () {
+      submitBooking().then(function (id) {
+        // Show the full details on their own page; stay here if this browser can't save them
+        if (saveBooking(id)) { location.href = 'booking.html'; return; }
         $('bkDone').hidden = false;
         state.intro = 'sentIntro'; $('bkSendIntro').textContent = t('sentIntro');
         $('bkSendWrap').hidden = false;
@@ -1471,6 +1490,7 @@
         })
       }).then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json().then(function (d) { return d && d.id; }, function () { return ''; });
       });
     }
     $('bkBack').addEventListener('click', function () { go(state.step - 1); });
