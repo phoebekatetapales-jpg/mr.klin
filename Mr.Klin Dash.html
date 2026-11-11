@@ -462,10 +462,15 @@ const ALL_SECTIONS = [
 // Per-role page access lives on ACCOUNTS[role].sections (set further down)
 // and is editable at runtime from the User Access page — this just maps
 // that list of ids to the full {id,label,icon} records for nav rendering.
+// Sections only one role may ever have; User Access can't grant them to others.
+const ROLE_ONLY_SECTIONS = { developer: "developer" };
+function sectionAllowedForRole(sectionId, role) {
+  return !ROLE_ONLY_SECTIONS[sectionId] || ROLE_ONLY_SECTIONS[sectionId] === role;
+}
 function sectionsForRole(role) {
   const account = ACCOUNTS[role];
   if (!account) return [];
-  return ALL_SECTIONS.filter((s) => account.sections.includes(s.id));
+  return ALL_SECTIONS.filter((s) => account.sections.includes(s.id) && sectionAllowedForRole(s.id, role));
 }
 
 // Sidebar UI state — desktop collapse persists across sessions, the mobile
@@ -3167,12 +3172,12 @@ function renderPageHeader() {
 function sectionToggleRow(role, section) {
   const account = ACCOUNTS[role];
   const enabled = account.sections.includes(section.id);
-  const locked = role === currentRole && section.id === "access";
+  const locked = (role === currentRole && section.id === "access") || ROLE_ONLY_SECTIONS[section.id] === role;
   return `
     <div class="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 ${locked ? "opacity-50" : ""}">
       <span class="flex items-center gap-2 text-sm text-ink"><i data-lucide="${section.icon}" class="h-3.5 w-3.5 shrink-0 text-muted"></i><span class="truncate">${section.label}</span></span>
       <button onclick="${locked ? "" : `toggleSectionAccess('${role}', '${section.id}')`}" role="switch" aria-checked="${enabled}"
-        title="${locked ? "You can't remove your own User Access permission" : enabled ? "Remove access" : "Grant access"}"
+        title="${locked ? (ROLE_ONLY_SECTIONS[section.id] ? "Always on for the Developer" : "You can't remove your own User Access permission") : enabled ? "Remove access" : "Grant access"}"
         class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-brand-amber" : "bg-line/20"} ${locked ? "cursor-not-allowed" : ""}">
         <span class="inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${enabled ? "translate-x-4" : "translate-x-1"}"></span>
       </button>
@@ -3204,7 +3209,7 @@ function accountAccessCard(role) {
 
       <div>
         <p class="mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">Page access</p>
-        <div class="space-y-0.5">${ALL_SECTIONS.map((s) => sectionToggleRow(role, s)).join("")}</div>
+        <div class="space-y-0.5">${ALL_SECTIONS.filter((s) => sectionAllowedForRole(s.id, role)).map((s) => sectionToggleRow(role, s)).join("")}</div>
       </div>
 
       <form onsubmit="updateAccountPassword(event, '${role}')" class="space-y-2">
@@ -3228,6 +3233,7 @@ function toggleAccountActive(role) {
 
 function toggleSectionAccess(role, sectionId) {
   if (role === currentRole && sectionId === "access") return;
+  if (ROLE_ONLY_SECTIONS[sectionId]) return;
   const account = ACCOUNTS[role];
   account.sections = account.sections.includes(sectionId)
     ? account.sections.filter((id) => id !== sectionId)
@@ -3267,6 +3273,76 @@ const DEV_LINKS = [
   { label: "Vercel", url: "https://vercel.com/dashboard", icon: "server", note: "Deployments, logs, and the Upstash Redis database" },
 ];
 const devApiCheck = { state: "idle", ms: 0, count: 0, error: "", at: null };
+const STATUS_API = "/api/status";
+const siteStatus = { state: "idle", checks: [], deployment: null, at: null, error: "" };
+
+async function runSiteStatusCheck() {
+  siteStatus.state = "checking";
+  if (state.section === "developer") renderAll();
+  try {
+    const res = await fetch(STATUS_API, { cache: "no-store" });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    siteStatus.checks = data.checks || [];
+    siteStatus.deployment = data.deployment || null;
+    siteStatus.state = "done";
+    siteStatus.error = "";
+  } catch (err) {
+    siteStatus.state = "error";
+    siteStatus.error = err.message || "Could not run the status check.";
+  }
+  siteStatus.at = new Date();
+  if (state.section === "developer") renderAll();
+}
+
+function renderSiteStatus() {
+  const st = siteStatus;
+  const down = st.checks.filter((c) => c.state === "down");
+  const slow = st.checks.filter((c) => c.state === "slow");
+  const pill = { up: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", slow: "bg-brand-amber/15 text-brand-amber", down: "bg-brand-red/15 text-brand-red" };
+  const label = { up: "Up", slow: "Slow", down: "Down" };
+  const summary = st.state === "checking" && !st.checks.length
+    ? { cls: "border-line/10 bg-line/5 text-muted", icon: "loader", text: "Checking the website and dashboard…" }
+    : st.state === "error"
+      ? { cls: "border-brand-red/30 bg-brand-red/10 text-brand-red", icon: "alert-triangle", text: "Couldn't run the status check: " + escapeHtml(st.error) }
+      : !st.checks.length
+        ? { cls: "border-line/10 bg-line/5 text-muted", icon: "activity", text: "Not checked yet." }
+        : down.length
+          ? { cls: "border-brand-red/30 bg-brand-red/10 text-brand-red", icon: "alert-triangle", text: `${down.length} of ${st.checks.length} checks are down` }
+          : slow.length
+            ? { cls: "border-brand-amber/40 bg-brand-amber/10 text-brand-amber", icon: "gauge", text: `All online — ${slow.length} responding slowly` }
+            : { cls: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", icon: "check-circle-2", text: "All systems operational" };
+  const groups = ["Website", "Dashboard"];
+  const dep = st.deployment;
+
+  return `
+    <div class="space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border px-4 py-3 ${summary.cls}">
+        <span class="flex items-center gap-2 text-sm font-semibold"><i data-lucide="${summary.icon}" class="h-4 w-4 shrink-0"></i>${summary.text}</span>
+        <span class="flex items-center gap-3">
+          ${st.at ? `<span class="text-xs opacity-80">Checked ${st.at.toLocaleTimeString()}</span>` : ""}
+          <button onclick="runSiteStatusCheck()" ${st.state === "checking" ? "disabled" : ""} class="inline-flex items-center gap-1.5 rounded-lg bg-brand-red px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-red/90 disabled:opacity-50"><i data-lucide="refresh-cw" class="h-3.5 w-3.5"></i> ${st.state === "checking" ? "Checking…" : "Check now"}</button>
+        </span>
+      </div>
+      ${st.checks.length ? `<div class="grid grid-cols-1 gap-4 lg:grid-cols-2">${groups.map((g) => `
+        <div class="overflow-hidden rounded-xl border border-line/10">
+          <p class="flex items-center gap-2 border-b border-line/10 bg-line/[0.03] px-4 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <i data-lucide="${g === "Website" ? "globe" : "layout-dashboard"}" class="h-3.5 w-3.5"></i>${g}
+          </p>
+          <ul class="divide-y divide-line/5">${st.checks.filter((c) => c.group === g).map((c) => `
+            <li class="flex items-center gap-3 px-4 py-2.5 text-sm">
+              <span class="h-2 w-2 shrink-0 rounded-full ${c.state === "up" ? "bg-emerald-500" : c.state === "slow" ? "bg-brand-amber" : "bg-brand-red"}"></span>
+              <span class="min-w-0 flex-1">
+                ${c.url ? `<a href="${c.url}" target="_blank" rel="noopener" class="block truncate text-ink hover:text-brand-red">${escapeHtml(c.name)}</a>` : `<span class="block truncate text-ink">${escapeHtml(c.name)}</span>`}
+                ${c.error ? `<span class="block text-[11px] text-brand-red">${escapeHtml(c.error)}</span>` : ""}
+              </span>
+              <span class="shrink-0 text-xs tabular-nums text-muted">${c.code ? c.code + " · " : ""}${c.ms} ms</span>
+              <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${pill[c.state]}">${label[c.state]}</span>
+            </li>`).join("")}</ul>
+        </div>`).join("")}</div>` : ""}
+      ${dep && dep.commit ? `<p class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted"><i data-lucide="git-commit-horizontal" class="h-3.5 w-3.5"></i> Dashboard live version: <span class="font-mono text-ink">${escapeHtml(dep.commit)}</span>${dep.branch ? " on " + escapeHtml(dep.branch) : ""}${dep.message ? " — " + escapeHtml(dep.message) : ""}</p>` : ""}
+    </div>`;
+}
 
 async function runDevApiCheck() {
   devApiCheck.state = "checking";
@@ -3309,6 +3385,8 @@ function devClearKey(key) {
 
 function renderDeveloperSection() {
   const root = document.getElementById("section-root");
+  // First visit to this page runs the status check automatically
+  if (siteStatus.state === "idle") setTimeout(runSiteStatusCheck, 0);
   const c = devApiCheck;
   const apiBadge = c.state === "ok"
     ? `<span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Online</span>`
@@ -3322,6 +3400,7 @@ function renderDeveloperSection() {
   const kb = (n) => (n / 1024).toFixed(n < 10240 ? 1 : 0) + " KB";
 
   root.innerHTML = `
+    ${overviewCard("Site status — website & dashboard", renderSiteStatus())}
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
       ${statCard("Website bookings", fmt(onlineBookings.length), "Loaded from the booking API", "globe")}
       ${statCard("Walk-in bookings", fmt(walkins), "Stored in this browser", "store")}
