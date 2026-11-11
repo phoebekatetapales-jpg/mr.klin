@@ -1268,7 +1268,7 @@ async function setBookingPayment(id, payment) {
     } catch {
       alert("Couldn't update the payment on this website booking. Check your internet connection and try again.");
     }
-    refreshBookingListRows();
+    afterPaymentChange();
     return;
   }
   const bookings = loadWalkinBookings();
@@ -1276,7 +1276,13 @@ async function setBookingPayment(id, payment) {
   if (!booking) return;
   booking.payment = payment;
   saveWalkinBookings(bookings);
-  refreshBookingListRows();
+  afterPaymentChange();
+}
+// The Booking List only redraws its rows so the search box keeps focus;
+// other pages (Financials) redraw fully.
+function afterPaymentChange() {
+  if (state.section === "bookinglist") refreshBookingListRows();
+  else renderAll();
 }
 
 function refreshBookingListRows() {
@@ -2326,14 +2332,204 @@ function buildFinancialKpis() {
   const paid = paidTransactions();
   const totalRevenue = paid.reduce((s, t) => s + t.amount, 0);
   const avgTicket = paid.length ? Math.round(totalRevenue / paid.length) : 0;
-  const unpaidInvoices = INVOICES.filter((i) => i.status !== "Paid");
-  const outstandingTotal = unpaidInvoices.reduce((s, i) => s + i.amount, 0);
+  const unpaidBookings = unpaidBookingInvoices();
+  const unpaidBookingTotal = unpaidBookings.reduce((s, i) => s + i.balance, 0);
   return [
     { label: "Total Revenue", value: peso(scaleValue(totalRevenue, false)), sub: "Across all channels", icon: "trending-up" },
     { label: "Average Ticket", value: peso(avgTicket), sub: "Per completed service", icon: "receipt" },
     { label: "Transactions", value: fmt(scaleValue(paid.length, false)), sub: "Completed payments", icon: "arrow-left-right" },
-    { label: "Outstanding Invoices", value: peso(outstandingTotal), sub: `${unpaidInvoices.length} invoice(s) pending`, icon: "file-clock" },
+    { label: "Unpaid Bookings", value: peso(unpaidBookingTotal), sub: `${unpaidBookings.length} booking(s) not fully paid`, icon: "file-clock" },
   ];
+}
+
+// ---------------------------------------------------------------------------
+// Unpaid booking invoices — real bookings (website + walk-in) that are not
+// fully paid yet. Amounts come from the website estimate; walk-ins have no
+// price recorded, so their amount shows as "to be set".
+// ---------------------------------------------------------------------------
+const unpaidInvoiceView = { filter: "all" };
+
+function estimateTotal(estimate) {
+  const m = /₱\s?([\d,]+(?:\.\d+)?)/.exec(String(estimate || ""));
+  return m ? Number(m[1].replace(/,/g, "")) : 0;
+}
+function invoiceNumber(b) {
+  const tail = String(b.id || "").split("-").pop() || "";
+  return "INV-" + tail.slice(-6).toUpperCase();
+}
+function bookingInvoice(b) {
+  const pay = bookingPayment(b);
+  const total = estimateTotal(b.estimate);
+  const half = Math.ceil(total / 2);
+  const paid = pay === "Downpayment paid" ? half : 0;
+  const key = bookingDateKey(b);
+  const today = todayKey();
+  return {
+    b, pay, total, paid,
+    balance: total - paid,
+    dueNow: pay === "Unpaid" ? half : total - paid,
+    isFrom: /^\s*from\b/i.test(b.estimate || "") || /quote/i.test(b.estimate || ""),
+    number: invoiceNumber(b),
+    dateKey: key,
+    overdue: key < today,
+    today: key === today,
+  };
+}
+function unpaidBookingInvoices() {
+  return loadAllBookings()
+    .filter((b) => b.status !== "Cancelled" && bookingPayment(b) !== "Fully paid")
+    .map(bookingInvoice)
+    .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+}
+function setUnpaidInvoiceFilter(id) {
+  unpaidInvoiceView.filter = id;
+  renderAll();
+}
+function invoiceAmountText(inv, amount) {
+  return inv.total ? (inv.isFrom ? "from " : "") + peso(amount) : "Price to be set";
+}
+
+function renderUnpaidBookingInvoices() {
+  const all = unpaidBookingInvoices();
+  const counts = {
+    all: all.length,
+    Unpaid: all.filter((i) => i.pay === "Unpaid").length,
+    "Downpayment paid": all.filter((i) => i.pay === "Downpayment paid").length,
+    overdue: all.filter((i) => i.overdue).length,
+  };
+  const tabs = [
+    { id: "all", label: "All not fully paid" },
+    { id: "Unpaid", label: "No 50% yet" },
+    { id: "Downpayment paid", label: "Partial (50% paid)" },
+    { id: "overdue", label: "Service date passed" },
+  ];
+  const f = unpaidInvoiceView.filter;
+  const rows = all.filter((i) => f === "all" || (f === "overdue" ? i.overdue : i.pay === f));
+  const tabRow = `<div class="mb-3 flex flex-wrap gap-2">` + tabs.map((t) => `
+    <button onclick="setUnpaidInvoiceFilter('${t.id}')"
+      class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${f === t.id ? "bg-ink text-canvas" : "bg-line/5 text-muted hover:text-ink"}">${t.label} <span class="opacity-70">${counts[t.id]}</span></button>`).join("") + `</div>`;
+  if (!rows.length) return tabRow + emptyNote(all.length ? "No invoices match this filter." : "Every booking is fully paid.");
+
+  return tabRow + `<div class="overflow-x-auto rounded-xl border border-line/10">
+    <table class="w-full text-left text-sm">
+      <thead>
+        <tr class="border-b border-line/10 bg-line/[0.03] text-[11px] font-semibold uppercase tracking-wider text-muted">
+          <th class="whitespace-nowrap px-4 py-3">Invoice</th>
+          <th class="whitespace-nowrap px-4 py-3">Customer</th>
+          <th class="whitespace-nowrap px-4 py-3">Service</th>
+          <th class="whitespace-nowrap px-4 py-3">Booking date</th>
+          <th class="whitespace-nowrap px-4 py-3 text-right">Total</th>
+          <th class="whitespace-nowrap px-4 py-3 text-right">Paid</th>
+          <th class="whitespace-nowrap px-4 py-3 text-right">Balance</th>
+          <th class="whitespace-nowrap px-4 py-3">Status</th>
+          <th class="whitespace-nowrap px-4 py-3">Action</th>
+        </tr>
+      </thead>
+      <tbody>${rows.map((inv) => {
+        const b = inv.b;
+        return `
+        <tr class="border-b border-line/5 last:border-0 hover:bg-line/[0.02]">
+          <td class="whitespace-nowrap px-4 py-3">
+            <p class="font-medium tabular-nums text-ink">${inv.number}</p>
+            <p class="text-[11px] text-muted">${b.source === "website" ? "Website" : "Walk-in"}</p>
+          </td>
+          <td class="whitespace-nowrap px-4 py-3">
+            <p class="text-ink">${b.ownerName || "—"}</p>
+            ${b.phone ? `<p class="text-[11px] text-muted">${b.phone}</p>` : ""}
+          </td>
+          <td class="px-4 py-3 text-muted">
+            <p class="max-w-[220px]">${b.service || "—"}</p>
+            <p class="text-[11px]">${b.vehicle || ""}${b.plate ? " · " + b.plate : ""}</p>
+          </td>
+          <td class="whitespace-nowrap px-4 py-3 tabular-nums ${inv.overdue ? "font-semibold text-brand-red" : inv.today ? "font-semibold text-ink" : "text-ink"}">
+            ${inv.today ? "Today" : formatDateKey(inv.dateKey)}
+            ${inv.overdue ? `<p class="text-[11px] font-medium">Service date passed</p>` : ""}
+          </td>
+          <td class="whitespace-nowrap px-4 py-3 text-right tabular-nums text-ink">${invoiceAmountText(inv, inv.total)}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-right tabular-nums text-muted">${inv.paid ? peso(inv.paid) : inv.pay === "Downpayment paid" ? "50%" : "₱0"}</td>
+          <td class="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-ink">
+            ${invoiceAmountText(inv, inv.balance)}
+            ${inv.pay === "Unpaid" && inv.total ? `<p class="text-[11px] font-normal text-brand-red">50% due: ${inv.isFrom ? "at least " : ""}${peso(inv.dueNow)}</p>` : ""}
+          </td>
+          <td class="whitespace-nowrap px-4 py-3">
+            <span class="rounded-full border px-2 py-0.5 text-[11px] font-semibold ${PAYMENT_STYLES[inv.pay]}">${inv.pay === "Unpaid" ? "Unpaid" : "Partial"}</span>
+          </td>
+          <td class="whitespace-nowrap px-4 py-3">
+            <div class="flex items-center gap-1.5">
+              <button onclick="openBookingInvoice('${b.id}')" class="inline-flex items-center gap-1 rounded-lg border border-line/10 px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-line/20 hover:bg-line/5 hover:text-ink"><i data-lucide="file-text" class="h-3.5 w-3.5"></i> View</button>
+              ${inv.pay === "Unpaid" ? `<button onclick="setBookingPayment('${b.id}', 'Downpayment paid')" class="rounded-lg border border-brand-amber/40 px-2 py-1 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">50% paid</button>` : ""}
+              <button onclick="setBookingPayment('${b.id}', 'Fully paid')" class="rounded-lg border border-emerald-500/40 px-2 py-1 text-xs font-medium text-emerald-600 transition-colors hover:bg-emerald-500/10 dark:text-emerald-400">Fully paid</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join("")}</tbody>
+    </table>
+  </div>`;
+}
+
+// Printable invoice for one booking, opened in a dialog.
+function openBookingInvoice(id) {
+  const inv = unpaidBookingInvoices().find((i) => i.b.id === id) || (() => {
+    const b = loadAllBookings().find((x) => x.id === id);
+    return b ? bookingInvoice(b) : null;
+  })();
+  if (!inv) return;
+  const b = inv.b;
+  let dlg = document.getElementById("invoice-dialog");
+  if (!dlg) {
+    dlg = document.createElement("dialog");
+    dlg.id = "invoice-dialog";
+    dlg.className = "w-[min(640px,calc(100vw-32px))] rounded-2xl border border-line/10 bg-panel p-0 text-ink shadow-2xl backdrop:bg-black/50";
+    dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+    document.body.appendChild(dlg);
+  }
+  const row = (label, value) => `<div class="flex justify-between gap-4 py-1.5"><dt class="text-muted">${label}</dt><dd class="text-right text-ink">${value}</dd></div>`;
+  dlg.innerHTML = `
+    <div id="invoice-print" class="p-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="font-display text-lg font-bold">MR. KLIN</p>
+          <p class="text-xs text-muted">Trading &amp; Services Corp. · 74 M.L Quezon St., Bagumbayan, Taguig · 0917-880-5755</p>
+        </div>
+        <div class="text-right">
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">Invoice</p>
+          <p class="font-semibold tabular-nums">${inv.number}</p>
+          <span class="mt-1 inline-block whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold ${PAYMENT_STYLES[inv.pay]}">${PAYMENT_LABELS[inv.pay]}</span>
+        </div>
+      </div>
+      <dl class="mt-5 divide-y divide-line/10 text-sm">
+        ${row("Billed to", `${b.ownerName || "—"}${b.phone ? "<br><span class='text-xs text-muted'>" + b.phone + "</span>" : ""}${b.email ? "<br><span class='text-xs text-muted'>" + b.email + "</span>" : ""}`)}
+        ${row("Vehicle", `${b.vehicle || "—"}${b.plate ? " · " + b.plate : ""}`)}
+        ${row("Service", b.service || "—")}
+        ${row("Booking date", `${formatDateKey(inv.dateKey)}${b.time ? " · " + String(b.time).replace(" · Website", "") : ""}`)}
+        ${row("Source", b.source === "website" ? "Website booking" : "Walk-in")}
+      </dl>
+      <dl class="mt-4 rounded-xl border border-line/10 bg-line/[0.03] px-4 py-2 text-sm">
+        ${row("Estimated total", invoiceAmountText(inv, inv.total))}
+        ${row("Paid so far", inv.paid ? peso(inv.paid) + " (50% downpayment)" : "₱0")}
+        ${inv.pay === "Unpaid" && inv.total ? row("50% downpayment due", `<span class="font-semibold text-brand-red">${inv.isFrom ? "at least " : ""}${peso(inv.dueNow)}</span>`) : ""}
+        <div class="flex justify-between gap-4 border-t border-line/10 py-2 text-base font-semibold"><span>Balance due</span><span class="tabular-nums">${invoiceAmountText(inv, inv.balance)}</span></div>
+      </dl>
+      <p class="mt-3 text-[11px] text-muted">${inv.isFrom ? "Final price is confirmed after inspection. " : ""}A downpayment of at least 50% is required to secure the booking.</p>
+    </div>
+    <div class="flex flex-wrap justify-end gap-2 border-t border-line/10 px-6 py-4">
+      <button onclick="printBookingInvoice()" class="inline-flex items-center gap-1.5 rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted hover:bg-line/5 hover:text-ink"><i data-lucide="printer" class="h-3.5 w-3.5"></i> Print</button>
+      <button onclick="document.getElementById('invoice-dialog').close()" class="rounded-lg bg-brand-red px-3 py-1.5 text-xs font-medium text-white">Close</button>
+    </div>`;
+  lucide.createIcons();
+  dlg.showModal();
+}
+function printBookingInvoice() {
+  const el = document.getElementById("invoice-print");
+  if (!el) return;
+  const w = window.open("", "_blank", "width=720,height=900");
+  if (!w) { alert("Allow pop-ups for this site to print the invoice."); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Invoice</title>
+    <style>body{font:14px/1.5 system-ui,sans-serif;color:#111;margin:32px}dl{margin:12px 0}dl div{display:flex;justify-content:space-between;gap:16px;padding:6px 0;border-bottom:1px solid #eee}dt{color:#555}dd{margin:0;text-align:right}span[class*=rounded-full]{border:1px solid #999;border-radius:99px;padding:1px 8px;font-size:11px}.text-xs,.text-\\[11px\\]{font-size:12px;color:#555}.flex{display:flex}.justify-between{justify-content:space-between}.text-right{text-align:right}.font-semibold,.font-bold{font-weight:600}</style>
+    </head><body>${el.innerHTML}</body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
 }
 
 function renderFinancialsSection() {
@@ -2344,6 +2540,7 @@ function renderFinancialsSection() {
     <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
       ${financialKpis.map((k) => statCard(k.label, k.value, k.sub, k.icon)).join("")}
     </div>
+    ${overviewCard("Unpaid booking invoices", renderUnpaidBookingInvoices())}
     <div id="filter-bar"></div>
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
       ${overviewCard("Revenue trend, last six months", barTrendHtml(REVENUE_TREND, "Revenue relative to this month's peak — figures are illustrative."))}
