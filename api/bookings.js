@@ -6,6 +6,7 @@
 const HASH_KEY = "mrklin:bookings";
 const ALLOWED_ORIGINS = ["https://websitemrklin.vercel.app", "https://mr-klin.vercel.app"];
 const STATUSES = ["Booked", "Confirmed", "In progress", "Completed", "Cancelled"];
+const PAYMENTS = ["Unpaid", "Downpayment paid", "Fully paid"];
 const TIMES = ["8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
 const MAX_PER_IP_PER_HOUR = 10;
 // Photos of the unit, uploaded with a booking. The website shrinks them to
@@ -114,6 +115,7 @@ module.exports = async function handler(req, res) {
       booking.id = `web-${now}-${Math.random().toString(36).slice(2, 8)}`;
       booking.createdAt = now;
       booking.status = "Booked";
+      booking.payment = "Unpaid";
       for (let i = 0; i < photos.length; i++) await redis(["SET", photoKey(booking.id, i), photos[i], "EX", PHOTO_TTL_SECONDS]);
       booking.photoCount = photos.length;
       await redis(["HSET", HASH_KEY, booking.id, JSON.stringify(booking)]);
@@ -123,11 +125,15 @@ module.exports = async function handler(req, res) {
     if (req.method === "PATCH") {
       const id = text(req.body && req.body.id, 60);
       const status = text(req.body && req.body.status, 20);
-      if (!STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status." });
+      const payment = text(req.body && req.body.payment, 30);
+      if (!status && !payment) return res.status(400).json({ error: "Nothing to change." });
+      if (status && !STATUSES.includes(status)) return res.status(400).json({ error: "Unknown status." });
+      if (payment && !PAYMENTS.includes(payment)) return res.status(400).json({ error: "Unknown payment state." });
       const raw = await redis(["HGET", HASH_KEY, id]);
       if (!raw) return res.status(404).json({ error: "Booking not found." });
       const booking = JSON.parse(raw);
-      booking.status = status;
+      if (status) booking.status = status;
+      if (payment) booking.payment = payment;
       await redis(["HSET", HASH_KEY, id, JSON.stringify(booking)]);
       return res.status(200).json({ ok: true, booking });
     }
