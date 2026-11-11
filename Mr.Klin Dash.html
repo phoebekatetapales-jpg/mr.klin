@@ -444,7 +444,8 @@ const state = { timeframe: "today", serviceType: "all", section: "overview", tra
 
 // Nav is role-scoped: Admin runs day-to-day operations (no account
 // management); Owner sees everything, including User Access; Employee gets
-// just their booking queue.
+// just their booking queue; Developer (who maintains the website and
+// dashboard) gets every page, including Developer Tools.
 const ALL_SECTIONS = [
   { id: "overview", label: "Overview", icon: "layout-dashboard", description: "What needs attention today, and how every customer channel is trending." },
   { id: "sales", label: "Sales", icon: "shopping-cart", description: "What sold, how customers paid, and which services bring in the most." },
@@ -455,6 +456,7 @@ const ALL_SECTIONS = [
   { id: "bookinglist", label: "Booking List", icon: "list-checks", description: "Every walk-in and website booking in one list — search, filter by status or source, and mark jobs done." },
   { id: "access", label: "User Access", icon: "shield", description: "Who can sign in, which pages each role can reach, and password resets." },
   { id: "settings", label: "Settings", icon: "settings", description: "Business details, appearance, and data stored in this browser." },
+  { id: "developer", label: "Developer Tools", icon: "code", description: "Maintenance tools for the website and dashboard — booking API health, live links, and data stored in this browser." },
 ];
 
 // Per-role page access lives on ACCOUNTS[role].sections (set further down)
@@ -788,6 +790,8 @@ const ACCOUNTS = {
   admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookings", "bookinglist", "settings"] },
   owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookinglist", "access", "settings"] },
   employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings", "bookinglist"] },
+  // Maintains the website and dashboard: access to the whole workspace.
+  developer: { label: "Developer", password: "developer123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookings", "bookinglist", "access", "settings", "developer"] },
 };
 const SESSION_KEY = "mrklin_session_v1";
 let loginRole = "admin";
@@ -851,6 +855,7 @@ function renderLogin() {
               <button type="button" id="role-btn-admin" onclick="setLoginRole('admin')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Admin</button>
               <button type="button" id="role-btn-owner" onclick="setLoginRole('owner')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Owner</button>
               <button type="button" id="role-btn-employee" onclick="setLoginRole('employee')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Employee</button>
+              <button type="button" id="role-btn-developer" onclick="setLoginRole('developer')" class="flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:text-sm">Developer</button>
             </div>
           </div>
           <div>
@@ -3211,6 +3216,116 @@ function renderAccessSection() {
     </p>`;
 }
 
+// ---------------------------------------------------------------------------
+// Developer Tools — for whoever maintains the website and dashboard.
+// ---------------------------------------------------------------------------
+const DEV_LINKS = [
+  { label: "Live dashboard", url: "https://mr-klin.vercel.app/", icon: "layout-dashboard", note: "This dashboard, deployed from GitHub repo mr.klin" },
+  { label: "Public website", url: "https://websitemrklin.vercel.app/", icon: "globe", note: "Deployed from GitHub repo Website-MR.KLIN" },
+  { label: "Dashboard code (GitHub)", url: "https://github.com/phoebekatetapales-jpg/mr.klin", icon: "git-branch", note: "Mr.Klin Dash.html, index.html, api/bookings.js" },
+  { label: "Website code (GitHub)", url: "https://github.com/phoebekatetapales-jpg/Website-MR.KLIN", icon: "git-branch", note: "Home, About, Services, Our Work, Contact, Booking pages" },
+  { label: "Vercel", url: "https://vercel.com/dashboard", icon: "server", note: "Deployments, logs, and the Upstash Redis database" },
+];
+const devApiCheck = { state: "idle", ms: 0, count: 0, error: "", at: null };
+
+async function runDevApiCheck() {
+  devApiCheck.state = "checking";
+  renderAll();
+  const started = performance.now();
+  try {
+    const res = await fetch(BOOKINGS_API, { cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    devApiCheck.ms = Math.round(performance.now() - started);
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    devApiCheck.count = (data.bookings || []).length;
+    devApiCheck.state = "ok";
+    devApiCheck.error = "";
+  } catch (err) {
+    devApiCheck.state = "error";
+    devApiCheck.error = err.message || "Could not reach the booking API.";
+  }
+  devApiCheck.at = new Date();
+  onlineBookingsSnapshot = "";
+  await fetchOnlineBookings();
+  renderAll();
+}
+function devStorageKeys() {
+  const rows = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key || !key.startsWith("mrklin")) continue;
+      rows.push({ key, size: (localStorage.getItem(key) || "").length });
+    }
+  } catch { /* storage blocked */ }
+  return rows.sort((a, b) => a.key.localeCompare(b.key));
+}
+function devClearKey(key) {
+  if (!confirm(`Delete "${key}" from this browser?\n\nThis can't be undone.${key === SESSION_KEY ? " You will be signed out." : ""}`)) return;
+  localStorage.removeItem(key);
+  if (key === SESSION_KEY) { logout(); return; }
+  renderAll();
+}
+
+function renderDeveloperSection() {
+  const root = document.getElementById("section-root");
+  const c = devApiCheck;
+  const apiBadge = c.state === "ok"
+    ? `<span class="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">Online</span>`
+    : c.state === "error"
+      ? `<span class="rounded-full bg-brand-red/15 px-2 py-0.5 text-[11px] font-semibold text-brand-red">Error</span>`
+      : c.state === "checking"
+        ? `<span class="rounded-full bg-line/10 px-2 py-0.5 text-[11px] font-semibold text-muted">Checking…</span>`
+        : `<span class="rounded-full bg-line/10 px-2 py-0.5 text-[11px] font-semibold text-muted">Not checked</span>`;
+  const storage = devStorageKeys();
+  const walkins = loadWalkinBookings().length;
+  const kb = (n) => (n / 1024).toFixed(n < 10240 ? 1 : 0) + " KB";
+
+  root.innerHTML = `
+    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      ${statCard("Website bookings", fmt(onlineBookings.length), "Loaded from the booking API", "globe")}
+      ${statCard("Walk-in bookings", fmt(walkins), "Stored in this browser", "store")}
+      ${statCard("Pages", fmt(ALL_SECTIONS.length), "In this dashboard", "layout-grid")}
+      ${statCard("Roles", fmt(Object.keys(ACCOUNTS).length), Object.values(ACCOUNTS).map((a) => a.label).join(", "), "users")}
+    </div>
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+      ${overviewCard("Booking API health", `
+        <div class="space-y-3 text-sm">
+          <div class="flex items-center justify-between gap-3">
+            <span class="font-mono text-xs text-muted">${BOOKINGS_API}</span>
+            ${apiBadge}
+          </div>
+          ${c.state === "ok" ? `<p class="text-muted">Responded in <b class="text-ink">${c.ms} ms</b> with <b class="text-ink">${c.count}</b> booking(s).</p>` : ""}
+          ${c.state === "error" ? `<p class="text-brand-red">${escapeHtml(c.error)}</p>` : ""}
+          ${c.at ? `<p class="text-xs text-muted">Last checked ${c.at.toLocaleTimeString()}</p>` : `<p class="text-xs text-muted">Checks the API that receives website bookings and photos (Upstash Redis on Vercel).</p>`}
+          <button onclick="runDevApiCheck()" ${c.state === "checking" ? "disabled" : ""} class="inline-flex items-center gap-1.5 rounded-lg bg-brand-red px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-brand-red/90 disabled:opacity-50"><i data-lucide="activity" class="h-3.5 w-3.5"></i> Run check &amp; refresh bookings</button>
+        </div>`)}
+      ${overviewCard("Project links", `<ul class="space-y-2">` + DEV_LINKS.map((l) => `
+        <li>
+          <a href="${l.url}" target="_blank" rel="noopener" class="flex items-center gap-3 rounded-xl border border-line/10 p-3 transition-colors hover:border-line/20 hover:bg-line/5">
+            <i data-lucide="${l.icon}" class="h-4 w-4 shrink-0 text-brand-amber"></i>
+            <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium text-ink">${l.label}</span><span class="block truncate text-xs text-muted">${l.note}</span></span>
+            <i data-lucide="external-link" class="h-3.5 w-3.5 shrink-0 text-muted"></i>
+          </a>
+        </li>`).join("") + `</ul>`)}
+    </div>
+    ${overviewCard("Data stored in this browser", storage.length ? `
+      <div class="overflow-x-auto rounded-xl border border-line/10">
+        <table class="w-full text-left text-sm">
+          <thead><tr class="border-b border-line/10 bg-line/[0.03] text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <th class="px-4 py-3">Key</th><th class="px-4 py-3 text-right">Size</th><th class="px-4 py-3">Action</th></tr></thead>
+          <tbody>${storage.map((s) => `
+            <tr class="border-b border-line/5 last:border-0">
+              <td class="px-4 py-2.5 font-mono text-xs text-ink">${escapeHtml(s.key)}</td>
+              <td class="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-muted">${kb(s.size)}</td>
+              <td class="px-4 py-2.5"><button onclick="devClearKey('${escapeHtml(s.key)}')" class="rounded-lg border border-brand-red/40 px-2 py-1 text-xs font-medium text-brand-red transition-colors hover:bg-brand-red/10">Clear</button></td>
+            </tr>`).join("")}</tbody>
+        </table>
+      </div>
+      <p class="mt-2 text-xs text-muted">Walk-in bookings, their payment status, and settings live only in this browser. Clearing a key deletes it here only — website bookings are stored online and aren't affected.</p>`
+      : emptyNote("Nothing stored in this browser yet."))}`;
+}
+
 const SECTION_RENDERERS = {
   overview: renderOverviewSection,
   services: renderServicesSection,
@@ -3220,6 +3335,7 @@ const SECTION_RENDERERS = {
   inventory: renderInventorySection,
   settings: renderSettingsSection,
   access: renderAccessSection,
+  developer: renderDeveloperSection,
   bookings: renderBookingsSection,
   bookinglist: renderBookingListSection,
 };
