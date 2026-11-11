@@ -44,6 +44,7 @@ function validate(body) {
     booking: {
       ownerName,
       phone,
+      email: text(b.email, 120),
       date,
       slot,
       services,

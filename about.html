@@ -1045,6 +1045,7 @@
       <div class="bk-fields">
         <label class="bk-field"><span data-i18n="name">Full name</span><input id="bkName" autocomplete="name" required></label>
         <label class="bk-field"><span data-i18n="phone">Mobile number</span><input id="bkPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="09XX-XXX-XXXX" required></label>
+        <label class="bk-field"><span data-i18n="email">Email address</span><input id="bkEmail" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" required></label>
         <label class="bk-field"><span data-i18n="car">Car make &amp; model</span><input id="bkCar" placeholder="e.g. Toyota Fortuner 2021" data-i18n-ph="carPh"></label>
         <label class="bk-field"><span data-i18n-html="plate">Plate number <small style="color:var(--muted)">(optional)</small></span><input id="bkPlate"></label>
         <label class="bk-field full" id="bkAddrWrap" hidden><span data-i18n="addr">Service address</span><input id="bkAddr" autocomplete="street-address" placeholder="Where should we go?" data-i18n-ph="addrPh"></label>
@@ -1120,7 +1121,7 @@
         mobileToggle: 'Home / office service <small>— we come to you (fee confirmed by our team)</small>',
         dateLabel: 'Choose a date', prevMonth: 'Previous month', nextMonth: 'Next month',
         timeLabel: 'Choose a time', timeHint: 'Pick a date first.',
-        name: 'Full name', phone: 'Mobile number', car: 'Car make & model', carPh: 'e.g. Toyota Fortuner 2021',
+        name: 'Full name', phone: 'Mobile number', email: 'Email address', car: 'Car make & model', carPh: 'e.g. Toyota Fortuner 2021',
         plate: 'Plate number <small style="color:var(--muted)">(optional)</small>',
         addr: 'Service address', addrPh: 'Where should we go?',
         notes: 'Notes <small style="color:var(--muted)">(optional)</small>',
@@ -1148,7 +1149,7 @@
         quoteFor: ' + quote for ', afterQuote: 'After your quote',
         errVehicle: 'Please choose your vehicle type.', errService: 'Please choose at least one service.',
         errDate: 'Please choose a date.', errTime: 'Please choose a time.',
-        errName: 'Please enter your name.', errPhone: 'Please enter a valid mobile number.',
+        errName: 'Please enter your name.', errPhone: 'Please enter a valid mobile number.', errEmail: 'Please enter a valid email address.',
         errAddr: 'Please enter the address for the home / office service.',
         sentIntro: 'Want a faster reply? You can also send these details to us directly:',
         failIntro: "We couldn't save your booking online just now. Please send it to us with one tap instead:",
@@ -1164,7 +1165,7 @@
         mobileToggle: 'Home / office service <small>— kami ang pupunta sa inyo (kukumpirmahin ng aming team ang bayad)</small>',
         dateLabel: 'Pumili ng petsa', prevMonth: 'Nakaraang buwan', nextMonth: 'Susunod na buwan',
         timeLabel: 'Pumili ng oras', timeHint: 'Pumili muna ng petsa.',
-        name: 'Buong pangalan', phone: 'Mobile number', car: 'Brand at modelo ng sasakyan', carPh: 'hal. Toyota Fortuner 2021',
+        name: 'Buong pangalan', phone: 'Mobile number', email: 'Email address', car: 'Brand at modelo ng sasakyan', carPh: 'hal. Toyota Fortuner 2021',
         plate: 'Plate number <small style="color:var(--muted)">(opsyonal)</small>',
         addr: 'Address ng serbisyo', addrPh: 'Saan kami pupunta?',
         notes: 'Mga tala <small style="color:var(--muted)">(opsyonal)</small>',
@@ -1192,7 +1193,7 @@
         quoteFor: ' + quote para sa ', afterQuote: 'Pagkatapos ng quote',
         errVehicle: 'Pakipili ang uri ng iyong sasakyan.', errService: 'Pumili ng kahit isang serbisyo.',
         errDate: 'Pakipili ng petsa.', errTime: 'Pakipili ng oras.',
-        errName: 'Pakilagay ang iyong pangalan.', errPhone: 'Pakilagay ang tamang mobile number.',
+        errName: 'Pakilagay ang iyong pangalan.', errPhone: 'Pakilagay ang tamang mobile number.', errEmail: 'Pakilagay ang tamang email address.',
         errAddr: 'Pakilagay ang address para sa home / office service.',
         sentIntro: 'Gusto mo ng mas mabilis na sagot? Puwede mo ring ipadala sa amin ang detalye nang direkta:',
         failIntro: 'Hindi namin na-save online ang booking mo ngayon. Ipadala na lang ito sa amin sa isang tap:',
@@ -1410,7 +1411,7 @@
     function saveBooking(id) {
       var keep = lang, car = $('bkCar').value.trim(), plate = $('bkPlate').value.trim();
       var saved = { id: id || '', createdAt: Date.now(), name: $('bkName').value.trim(), phone: $('bkPhone').value.trim(),
-        car: car, plate: plate, notes: $('bkNotes').value.trim(), message: message(id), text: {} };
+        email: $('bkEmail').value.trim(), car: car, plate: plate, notes: $('bkNotes').value.trim(), message: message(id), text: {} };
       ['en', 'tl'].forEach(function (l) {
         lang = l;
         saved.text[l] = { rows: summaryRows(false), services: chosen().map(function (s) { return [svcName(s), priceText(s)]; }), down: downText() };
@@ -1425,6 +1426,7 @@
         id ? 'Reference: ' + id : null,
         'Name: ' + $('bkName').value.trim(),
         'Mobile: ' + $('bkPhone').value.trim(),
+        'Email: ' + $('bkEmail').value.trim(),
         'Vehicle: ' + vehicle().label + ($('bkCar').value.trim() ? ' — ' + $('bkCar').value.trim() : '') + ($('bkPlate').value.trim() ? ' (' + $('bkPlate').value.trim() + ')' : ''),
         'Services: ' + chosen().map(function (s) { return s.name; }).join(', '),
         'Preferred schedule: ' + dateText(state.date) + ', ' + state.time,
@@ -1455,6 +1457,7 @@
       } else {
         if (!$('bkName').value.trim()) return 'errName';
         if ($('bkPhone').value.replace(/\D/g, '').length < 10) return 'errPhone';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test($('bkEmail').value.trim())) return 'errEmail';
         if ($('bkMobile').checked && !$('bkAddr').value.trim()) return 'errAddr';
       }
       return '';
@@ -1510,6 +1513,7 @@
         body: JSON.stringify({
           ownerName: $('bkName').value.trim(),
           phone: $('bkPhone').value.trim(),
+          email: $('bkEmail').value.trim(),
           vehicleType: vehicle().label,
           vehicle: $('bkCar').value.trim() || vehicle().label,
           plate: $('bkPlate').value.trim(),

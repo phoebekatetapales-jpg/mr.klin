@@ -720,12 +720,13 @@ function toDashboardBooking(raw) {
     id: escapeHtml(raw.id),
     source: "website",
     title: escapeHtml(`Website booking — ${services}`),
-    sub: escapeHtml(`${vehicle}${raw.plate ? " · Plate " + raw.plate : ""} · Owner: ${raw.ownerName} · ${formatDateKey(raw.date)} ${raw.slot}${raw.location && raw.location !== "At the shop" ? " · " + raw.location : ""}${raw.notes ? " · " + raw.notes : ""}`),
+    sub: escapeHtml(`${vehicle}${raw.plate ? " · Plate " + raw.plate : ""} · Owner: ${raw.ownerName}${raw.email ? " (" + raw.email + ")" : ""} · ${formatDateKey(raw.date)} ${raw.slot}${raw.location && raw.location !== "At the shop" ? " · " + raw.location : ""}${raw.notes ? " · " + raw.notes : ""}`),
     status: ONLINE_STATUSES.includes(raw.status) ? raw.status : "Booked",
     time: escapeHtml(`${raw.slot} · Website`),
     date: /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : todayKey(),
     ownerName: escapeHtml(raw.ownerName),
     phone: escapeHtml(raw.phone),
+    email: escapeHtml(raw.email),
     vehicle: escapeHtml(vehicle),
     plate: escapeHtml(raw.plate),
     service: escapeHtml(services),
@@ -1168,7 +1169,7 @@ function filteredBookingList() {
       if (bookingList.source === "website" && b.source !== "website") return false;
       if (bookingList.source === "walkin" && b.source === "website") return false;
       if (!q) return true;
-      return [b.ownerName, b.phone, b.vehicle, b.plate, b.service, b.notes, b.status]
+      return [b.ownerName, b.phone, b.email, b.vehicle, b.plate, b.service, b.notes, b.status]
         .some((f) => String(f || "").toLowerCase().includes(q));
     })
     .sort((a, b) => {
@@ -1191,6 +1192,7 @@ function bookingListRowsHtml(rows) {
         <td class="whitespace-nowrap px-4 py-3">
           <p class="text-ink">${v.ownerName || "—"}</p>
           ${v.phone ? `<p class="text-[11px] text-muted">${v.phone}</p>` : ""}
+          ${v.email ? `<p class="text-[11px] text-muted">${v.email}</p>` : ""}
         </td>
         <td class="whitespace-nowrap px-4 py-3">
           <p class="text-ink">${v.vehicle || "—"}</p>
