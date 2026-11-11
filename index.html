@@ -789,7 +789,8 @@ function loadAllBookings() {
 const ACCOUNTS = {
   admin: { label: "Admin", password: "admin123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookings", "bookinglist", "settings"] },
   owner: { label: "Owner", password: "owner123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookinglist", "access", "settings"] },
-  employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings", "bookinglist"] },
+  // Employee only sees the booking calendar and daily counts; they can't add or change bookings.
+  employee: { label: "Employee", password: "employee123", active: true, sections: ["bookings"], viewOnly: true },
   // Maintains the website and dashboard: access to the whole workspace.
   developer: { label: "Developer", password: "developer123", active: true, sections: ["overview", "sales", "financials", "stocks", "inventory", "bookings", "bookinglist", "access", "settings", "developer"] },
 };
@@ -801,6 +802,12 @@ let currentRole = null;
 let viewAsRole = null;
 function viewRole() {
   return currentRole === "developer" && viewAsRole && ACCOUNTS[viewAsRole] ? viewAsRole : currentRole;
+}
+// View-only roles (Employee) see the calendar and day counts but can't add,
+// edit, or mark bookings. Follows "View as" so the Developer preview matches.
+function isViewOnly() {
+  const account = ACCOUNTS[viewRole()];
+  return !!(account && account.viewOnly);
 }
 function setViewAs(role) {
   viewAsRole = role && role !== "developer" ? role : null;
@@ -1084,17 +1091,17 @@ function renderBookingDayPanel(bookings) {
             ${carThumbHtml(findCarModel(b.vehicle))}
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium text-ink">${b.vehicle || "Vehicle"}${b.plate ? ` <span class="text-muted">· ${b.plate}</span>` : ""}</p>
-              <p class="mt-0.5 truncate text-xs text-muted">${b.service || "Service"} · ${b.ownerName || "—"}</p>
+              <p class="mt-0.5 truncate text-xs text-muted">${b.service || "Service"}${isViewOnly() ? "" : " · " + (b.ownerName || "—")}</p>
               ${findCarModel(b.vehicle) ? `<div class="mt-0.5">${carLinkHtml(findCarModel(b.vehicle))}</div>` : ""}
             </div>
             <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[b.status] || "bg-line/10 text-muted"}">${b.status || "Booked"}</span>
           </div>`).join("") : `<p class="py-6 text-center text-sm text-muted">No units booked for this day.</p>`}
       </div>
-      <div class="border-t border-line/10 p-4">
+      ${isViewOnly() ? "" : `<div class="border-t border-line/10 p-4">
         <button onclick="openBookingForm('${key}')" class="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-red px-3 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-red/90">
           <i data-lucide="plus" class="h-3.5 w-3.5"></i> Book a unit for this day
         </button>
-      </div>
+      </div>`}
     </div>`;
 }
 
@@ -1117,7 +1124,10 @@ function renderBookingsSection() {
         ${renderBookingDayPanel(allVehicles)}
       </div>
     </div>`
-    + `
+    + (isViewOnly() ? `
+    <p class="flex items-center gap-2 rounded-xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-sm shadow-black/5">
+      <i data-lucide="eye" class="h-4 w-4 shrink-0"></i> View only — tap a day to see how many units are booked. Ask an Admin or Owner to add or change a booking.
+    </p>` : `
     <div>
       <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">Number of bookings by channel</p>
       <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -1190,7 +1200,7 @@ function renderBookingsSection() {
           </tbody>
         </table>
       </div>
-    </div>`;
+    </div>`);
 }
 
 // Booking List — flat, searchable list of every booking (walk-in + website).
@@ -1284,6 +1294,7 @@ function paymentCellHtml(v) {
 }
 
 async function setBookingPayment(id, payment) {
+  if (isViewOnly()) return;
   if (!PAYMENT_STATES.includes(payment)) return;
   const online = onlineBookings.find((b) => b.id === id);
   if (online) {
@@ -1356,9 +1367,9 @@ function renderBookingListSection() {
         ${BOOKING_LIST_STATUSES.map((s) => `<button onclick="setBookingListStatus('${s.id}')" class="${pill(bookingList.status === s.id)}">${s.label}</button>`).join("")}
         <span class="mx-1 hidden h-5 w-px bg-line/15 sm:inline-block"></span>
         ${BOOKING_LIST_SOURCES.map((s) => `<button onclick="setBookingListSource('${s.id}')" class="${pill(bookingList.source === s.id)}">${s.label}</button>`).join("")}
-        <button onclick="openBookingForm()" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-red/10 px-3 py-1.5 text-xs font-medium text-brand-red transition-colors hover:bg-brand-red/20">
+        ${isViewOnly() ? "" : `<button onclick="openBookingForm()" class="inline-flex items-center gap-1.5 rounded-lg bg-brand-red/10 px-3 py-1.5 text-xs font-medium text-brand-red transition-colors hover:bg-brand-red/20">
           <i data-lucide="plus" class="h-3.5 w-3.5"></i> New walk-in
-        </button>
+        </button>`}
       </div>
     </div>
     <div>
@@ -1393,6 +1404,7 @@ function renderBookingListSection() {
 }
 
 async function markWalkinDone(id) {
+  if (isViewOnly()) return;
   const online = onlineBookings.find((b) => b.id === id);
   if (online) {
     try {
@@ -1886,6 +1898,7 @@ function previewCar() {
 }
 
 function openBookingForm(date) {
+  if (isViewOnly()) return;
   const channel = CHANNELS.find((c) => c.id === "walkin");
   const defaultDate = date || todayKey();
   const root = document.getElementById("booking-modal-root");
