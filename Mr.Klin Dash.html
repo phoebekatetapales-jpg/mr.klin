@@ -520,7 +520,7 @@ function saveReadNotifications() {
 let readNotifications = loadReadNotifications();
 
 function buildNotifications() {
-  const sections = sectionsForRole(currentRole).map((s) => s.id);
+  const sections = sectionsForRole(viewRole()).map((s) => s.id);
   const items = [];
 
   if (sections.includes("overview") || sections.includes("services")) {
@@ -796,6 +796,16 @@ const ACCOUNTS = {
 const SESSION_KEY = "mrklin_session_v1";
 let loginRole = "admin";
 let currentRole = null;
+// Developer can preview what another role sees ("View as" in the header).
+// Only pages and navigation change; the developer stays signed in as Developer.
+let viewAsRole = null;
+function viewRole() {
+  return currentRole === "developer" && viewAsRole && ACCOUNTS[viewAsRole] ? viewAsRole : currentRole;
+}
+function setViewAs(role) {
+  viewAsRole = role && role !== "developer" ? role : null;
+  renderAll();
+}
 
 function loadSession() {
   try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch { return null; }
@@ -909,6 +919,7 @@ function attemptLogin(event) {
 
 function logout() {
   clearSession();
+  viewAsRole = null;
   loginRole = "admin";
   renderLogin();
 }
@@ -917,6 +928,20 @@ function renderHeaderRolePill(role, elementId) {
   const el = document.getElementById(elementId);
   if (!el) return;
   const account = ACCOUNTS[role];
+  if (role === "developer") {
+    const viewing = viewAsRole && ACCOUNTS[viewAsRole];
+    el.className = `inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 ${viewing ? "border-brand-amber/50 bg-brand-amber/10" : "border-line/10 bg-line/5"}`;
+    el.innerHTML = `
+      <i data-lucide="${viewing ? "eye" : "code"}" class="h-3.5 w-3.5 shrink-0 ${viewing ? "text-brand-amber" : "text-muted"}"></i>
+      <label class="flex items-center gap-1.5 text-sm text-muted"><span class="hidden sm:inline">View as</span>
+        <select onchange="setViewAs(this.value)" aria-label="View the dashboard as another role"
+          class="cursor-pointer rounded-md border-0 bg-transparent py-0 pl-0 pr-6 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand-red/20">
+          ${Object.keys(ACCOUNTS).map((r) => `<option value="${r}" ${(viewAsRole || "developer") === r ? "selected" : ""}>${r === "developer" ? "Developer (all pages)" : ACCOUNTS[r].label}</option>`).join("")}
+        </select>
+      </label>`;
+    return;
+  }
+  el.className = "inline-flex shrink-0 items-center gap-2 rounded-full border border-line/10 bg-line/5 px-3 py-1.5";
   el.innerHTML = `
     <span class="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-amber"></span>
     <span class="text-sm font-medium text-ink">${account ? account.label : role}</span>`;
@@ -926,6 +951,7 @@ function renderHeaderRolePill(role, elementId) {
 function startApp(role) {
   document.getElementById("login-root").innerHTML = "";
   currentRole = role;
+  viewAsRole = null;
   notificationsOpen = false;
   document.getElementById("app-root").classList.remove("hidden");
   renderAll();
@@ -2062,7 +2088,7 @@ function renderSidebar() {
   const overdueInvoiceCount = INVOICES.filter((i) => i.status === "Overdue").length;
   const lowStockCount = loadStock().filter((s) => stockStatus(s) !== "In stock").length;
   const equipmentIssueCount = loadEquipment().filter((e) => e.condition !== "Good").length;
-  const navSections = sectionsForRole(currentRole);
+  const navSections = sectionsForRole(viewRole());
   const sectionsHtml = navSections.map((s) => {
     const badge = s.id === "overview" ? newCount : s.id === "financials" ? overdueInvoiceCount : s.id === "stocks" ? lowStockCount : s.id === "inventory" ? equipmentIssueCount : 0;
     const active = state.section === s.id;
@@ -2107,7 +2133,7 @@ function renderSidebar() {
         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-red/20 text-sm font-semibold text-brand-red">${initials}</div>
         <div class="min-w-0 flex-1 ${hideLabel}">
           <p class="truncate text-sm font-semibold text-ink">${label}</p>
-          <p class="truncate text-xs text-muted">Signed in</p>
+          <p class="truncate text-xs ${viewAsRole && currentRole === "developer" ? "font-medium text-brand-amber" : "text-muted"}">${viewAsRole && currentRole === "developer" ? "Viewing as " + ACCOUNTS[viewAsRole].label : "Signed in"}</p>
         </div>
       </div>
       <button onclick="logout()" title="Log out"
@@ -2203,7 +2229,7 @@ function renderOverviewSection() {
   const root = document.getElementById("section-root");
   // The financial snapshot respects role access, so Admin (no Financials
   // page) never sees revenue figures here either.
-  const showFinancials = sectionsForRole(currentRole).some((s) => s.id === "financials");
+  const showFinancials = sectionsForRole(viewRole()).some((s) => s.id === "financials");
   root.innerHTML = `
     <div id="filter-bar"></div>
     <div id="kpi-header"></div>
@@ -3345,7 +3371,7 @@ function renderAll() {
   // Access page just revoked the section currentRole is sitting on (most
   // relevantly, an Owner editing their own permissions), fall back to
   // whatever that role's first remaining section is.
-  const allowedSections = sectionsForRole(currentRole).map((s) => s.id);
+  const allowedSections = sectionsForRole(viewRole()).map((s) => s.id);
   if (!allowedSections.includes(state.section)) {
     state.section = allowedSections[0] || "overview";
   }
