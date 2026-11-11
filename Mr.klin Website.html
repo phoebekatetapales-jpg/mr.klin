@@ -297,6 +297,17 @@
   .bk-field input, .bk-field textarea { width: 100%; min-height: 46px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--outline); background: var(--cell); color: var(--text); font: inherit; font-size: 16px; }
   .bk-field textarea { min-height: 84px; resize: vertical; }
   .bk-field input:focus, .bk-field textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+  .bk-photos { flex-basis: 100%; display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 500; }
+  .bk-photos small { color: var(--muted); font-weight: 400; }
+  .bk-photo-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+  .bk-photo { position: relative; width: 92px; height: 92px; margin: 0; border-radius: 12px; overflow: hidden; border: 1px solid var(--outline); background: var(--cell); }
+  .bk-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .bk-photo button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(0,0,0,.7); color: #fff; font-size: 16px; line-height: 1; cursor: pointer; }
+  .bk-photo-add { width: 92px; height: 92px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border: 1.5px dashed var(--outline); border-radius: 12px; background: var(--cell); color: var(--muted); font-size: 12px; font-weight: 600; cursor: pointer; text-align: center; }
+  .bk-photo-add:hover { border-color: var(--accent); color: var(--text); }
+  .bk-photo-add:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .bk-photo-add input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+  .bk-photo-add[hidden] { display: none; }
   .bk-summary { border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: var(--cell); margin-top: 20px; }
   .bk-summary dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 14px; }
   .bk-summary dt { color: var(--muted); }
@@ -1017,6 +1028,14 @@
         <label class="bk-field"><span data-i18n-html="plate">Plate number <small style="color:var(--muted)">(optional)</small></span><input id="bkPlate"></label>
         <label class="bk-field full" id="bkAddrWrap" hidden><span data-i18n="addr">Service address</span><input id="bkAddr" autocomplete="street-address" placeholder="Where should we go?" data-i18n-ph="addrPh"></label>
         <label class="bk-field full"><span data-i18n-html="notes">Notes <small style="color:var(--muted)">(optional)</small></span><textarea id="bkNotes" placeholder="Anything we should know — stains, dents, warning lights…" data-i18n-ph="notesPh"></textarea></label>
+        <div class="bk-photos" role="group" aria-labelledby="bkPhotoLabel">
+          <span id="bkPhotoLabel" data-i18n-html="photos">Photos of your unit <small>(optional, up to 3)</small></span>
+          <small data-i18n="photosHint">Show us the car and any problem areas — scratches, dents, stains. It helps us quote faster.</small>
+          <div class="bk-photo-list">
+            <span id="bkPhotoList" style="display:contents"></span>
+            <label class="bk-photo-add" id="bkPhotoAdd"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg><span data-i18n="photoAdd">Add photo</span><input type="file" id="bkPhotoInput" accept="image/*" multiple></label>
+          </div>
+        </div>
       </div>
       <div class="bk-reminders" role="note" aria-labelledby="bkRemTitle">
         <span class="bk-label" id="bkRemTitle" data-i18n="remTitle">Before your visit</span>
@@ -1093,6 +1112,10 @@
         addr: 'Service address', addrPh: 'Where should we go?',
         notes: 'Notes <small style="color:var(--muted)">(optional)</small>',
         notesPh: 'Anything we should know — stains, dents, warning lights…',
+        photos: 'Photos of your unit <small>(optional, up to 3)</small>',
+        photosHint: 'Show us the car and any problem areas — scratches, dents, stains. It helps us quote faster.',
+        photoAdd: 'Add photo', photoRemove: 'Remove photo', photoAlt: 'Photo of your unit',
+        errPhoto: "We couldn't read that photo. Please try a different one.", errPhotoMax: 'You can add up to 3 photos.',
         remTitle: 'Before your visit',
         remOrcr: "Please bring your vehicle's <b>OR/CR</b> (Official Receipt and Certificate of Registration).",
         remDown: 'A downpayment of <b>at least 50%</b> of your total estimated price is required to secure your booking.',
@@ -1137,6 +1160,10 @@
         addr: 'Address ng serbisyo', addrPh: 'Saan kami pupunta?',
         notes: 'Mga tala <small style="color:var(--muted)">(opsyonal)</small>',
         notesPh: 'May dapat ba kaming malaman? — mantsa, yupi, warning lights…',
+        photos: 'Mga litrato ng sasakyan <small>(opsyonal, hanggang 3)</small>',
+        photosHint: 'Ipakita ang sasakyan at ang mga parteng may problema — gasgas, yupi, mantsa. Mas mabilis naming maibibigay ang presyo.',
+        photoAdd: 'Magdagdag ng litrato', photoRemove: 'Alisin ang litrato', photoAlt: 'Litrato ng sasakyan mo',
+        errPhoto: 'Hindi namin mabasa ang litratong iyan. Pakisubukan ang iba.', errPhotoMax: 'Hanggang 3 litrato lang ang puwede.',
         remTitle: 'Bago ka pumunta',
         remOrcr: 'Pakidala ang <b>OR/CR</b> ng iyong sasakyan (Official Receipt at Certificate of Registration).',
         remDown: 'Kailangan ng downpayment na <b>hindi bababa sa 50%</b> ng kabuuang tinatayang presyo para ma-secure ang iyong booking.',
@@ -1234,6 +1261,7 @@
       if (!$('bkNextStep').disabled) $('bkNextStep').textContent = t('next')[state.step];
       if (state.error) showError(t(state.error));
       if (state.intro) $('bkSendIntro').textContent = t(state.intro);
+      if (typeof renderPhotos === 'function' && photos) renderPhotos();
       renderPrices();
       if (state.step === 1) { renderCalendar(); renderTimes(); }
       if (state.step === 2) renderSummary();
@@ -1402,6 +1430,7 @@
         '50% downpayment: ' + (e.priced ? (e.from || e.quote.length ? 'from ' : '') + peso(downpayment(e)) : 'after quote')
       ];
       if ($('bkNotes').value.trim()) lines.push('Notes: ' + $('bkNotes').value.trim());
+      if (photos.length) lines.push(id ? 'Photos of my unit: ' + photos.length + ' uploaded with the booking' : "Photos of my unit: I'll send " + photos.length + ' photo' + (photos.length > 1 ? 's' : '') + ' in this chat');
       return lines.filter(function (l) { return l !== null; }).join('\n');
     }
     $('bkCopy').addEventListener('click', function () {
@@ -1409,6 +1438,54 @@
       var done = function () { btn.textContent = t('copied'); setTimeout(function () { btn.textContent = t('copy'); }, 2000); };
       if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, function () { prompt(t('copyPrompt'), text); });
       else prompt(t('copyPrompt'), text);
+    });
+
+    // ----- Photos of the unit -----
+    // Shrunk in the browser to a JPEG of at most 1280px so uploads stay small on mobile data.
+    var MAX_PHOTOS = 3, photos = [];
+    function shrinkPhoto(file) {
+      return new Promise(function (resolve, reject) {
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () {
+          URL.revokeObjectURL(url);
+          var tries = [[1280, 0.72], [1024, 0.6], [800, 0.5]];
+          for (var i = 0; i < tries.length; i++) {
+            var s = Math.min(1, tries[i][0] / Math.max(img.naturalWidth, img.naturalHeight));
+            var c = document.createElement('canvas');
+            c.width = Math.max(1, Math.round(img.naturalWidth * s)); c.height = Math.max(1, Math.round(img.naturalHeight * s));
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            var data = c.toDataURL('image/jpeg', tries[i][1]);
+            if (data.length <= 600000) return resolve(data);
+          }
+          reject(new Error('too big'));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('unreadable')); };
+        img.src = url;
+      });
+    }
+    function renderPhotos() {
+      $('bkPhotoList').innerHTML = photos.map(function (p, i) {
+        return '<figure class="bk-photo"><img src="' + p + '" alt="' + esc(t('photoAlt')) + ' ' + (i + 1) + '">' +
+          '<button type="button" data-photo="' + i + '" aria-label="' + esc(t('photoRemove')) + ' ' + (i + 1) + '">×</button></figure>';
+      }).join('');
+      $('bkPhotoAdd').hidden = photos.length >= MAX_PHOTOS;
+    }
+    $('bkPhotoInput').addEventListener('change', function () {
+      var input = this, list = Array.prototype.slice.call(input.files || []);
+      var room = MAX_PHOTOS - photos.length;
+      if (list.length > room) setError('errPhotoMax');
+      list = list.slice(0, room);
+      input.value = '';
+      list.reduce(function (p, file) {
+        return p.then(function () {
+          return shrinkPhoto(file).then(function (data) { photos.push(data); renderPhotos(); }, function () { setError('errPhoto'); });
+        });
+      }, Promise.resolve());
+    });
+    $('bkPhotoList').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-photo]'); if (!b) return;
+      photos.splice(+b.dataset.photo, 1); renderPhotos();
+      $('bkPhotoInput').focus();
     });
 
     // ----- Step navigation -----
@@ -1490,6 +1567,7 @@
           location: mobile ? 'Home/office service — ' + $('bkAddr').value.trim() : 'At the shop',
           estimate: estimateText(e, true),
           notes: $('bkNotes').value.trim(),
+          photos: photos,
           company: $('bkCompany').value
         })
       }).then(function (res) {

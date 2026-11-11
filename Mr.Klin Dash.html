@@ -733,6 +733,7 @@ function toDashboardBooking(raw) {
     estimate: escapeHtml(raw.estimate),
     notes: escapeHtml(raw.notes),
     location: escapeHtml(raw.location),
+    photoCount: Math.max(0, Math.min(3, Number(raw.photoCount) || 0)),
   };
 }
 async function fetchOnlineBookings() {
@@ -1201,6 +1202,7 @@ function bookingListRowsHtml(rows) {
         <td class="px-4 py-3 text-muted">
           <p>${v.service || "—"}</p>
           ${v.notes ? `<p class="mt-0.5 max-w-[260px] text-[11px]">Note: ${v.notes}</p>` : ""}
+          ${v.photoCount ? `<div class="mt-1.5 flex gap-1.5">${Array.from({ length: v.photoCount }, (_, i) => `<a href="${BOOKINGS_API}?photo=${encodeURIComponent(v.id)}&n=${i}" target="_blank" rel="noopener" title="Open photo ${i + 1} of the unit"><img src="${BOOKINGS_API}?photo=${encodeURIComponent(v.id)}&n=${i}" alt="Unit photo ${i + 1}" loading="lazy" class="h-12 w-12 rounded-md border border-line/10 object-cover"></a>`).join("")}</div>` : ""}
         </td>
         <td class="whitespace-nowrap px-4 py-3 text-muted">${v.source === "website"
           ? `<span class="inline-flex items-center gap-1 text-brand-amber"><i data-lucide="globe" class="h-3.5 w-3.5"></i> Website</span>`
