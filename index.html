@@ -1091,7 +1091,7 @@ function renderBookingDayPanel(bookings) {
             ${carThumbHtml(findCarModel(b.vehicle))}
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-medium text-ink">${b.vehicle || "Vehicle"}${b.plate ? ` <span class="text-muted">· ${b.plate}</span>` : ""}</p>
-              <p class="mt-0.5 truncate text-xs text-muted">${b.service || "Service"}${isViewOnly() ? "" : " · " + (b.ownerName || "—")}</p>
+              <p class="mt-0.5 truncate text-xs text-muted">${b.service || "Service"} · ${b.ownerName || "—"}</p>
               ${findCarModel(b.vehicle) ? `<div class="mt-0.5">${carLinkHtml(findCarModel(b.vehicle))}</div>` : ""}
             </div>
             <span class="shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[b.status] || "bg-line/10 text-muted"}">${b.status || "Booked"}</span>
@@ -1126,7 +1126,7 @@ function renderBookingsSection() {
     </div>`
     + (isViewOnly() ? `
     <p class="flex items-center gap-2 rounded-xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-sm shadow-black/5">
-      <i data-lucide="eye" class="h-4 w-4 shrink-0"></i> View only — tap a day to see how many units are booked. Ask an Admin or Owner to add or change a booking.
+      <i data-lucide="eye" class="h-4 w-4 shrink-0"></i> View only — tap a day to see its units below. Ask an Admin or Owner to add or change a booking.
     </p>` : `
     <div>
       <p class="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted">Number of bookings by channel</p>
@@ -1141,7 +1141,7 @@ function renderBookingsSection() {
           <p class="font-heading text-2xl font-semibold text-ink tabular-nums">${totalBookings}</p>
         </div>
       </div>
-    </div>
+    </div>`) + `
     <div>
       <div class="mb-2 flex flex-wrap items-center justify-between gap-2">
         <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">Unit (vehicle) information — ${selectedDay ? formatDateKey(selectedDay) : "all bookings"}</p>
@@ -1160,7 +1160,7 @@ function renderBookingsSection() {
               <th class="whitespace-nowrap px-4 py-3">Visit</th>
               <th class="whitespace-nowrap px-4 py-3">Logged</th>
               <th class="whitespace-nowrap px-4 py-3">Status</th>
-              <th class="whitespace-nowrap px-4 py-3">Action</th>
+              ${isViewOnly() ? "" : `<th class="whitespace-nowrap px-4 py-3">Action</th>`}
             </tr>
           </thead>
           <tbody>
@@ -1184,23 +1184,24 @@ function renderBookingsSection() {
                   ${v.estimate ? `<p class="mt-0.5 text-[11px] text-muted">Est. ${v.estimate}</p>` : ""}
                   ${v.location && v.location !== "At the shop" ? `<p class="mt-0.5 text-[11px] text-muted">${v.location}</p>` : ""}
                   ${v.notes ? `<p class="mt-0.5 max-w-[260px] text-[11px] text-muted">Note: ${v.notes}</p>` : ""}
+                  ${v.photoCount ? `<div class="mt-1.5 flex gap-1.5">${Array.from({ length: v.photoCount }, (_, i) => `<a href="${BOOKINGS_API}?photo=${encodeURIComponent(v.id)}&n=${i}" target="_blank" rel="noopener" title="Open photo ${i + 1} of the unit"><img src="${BOOKINGS_API}?photo=${encodeURIComponent(v.id)}&n=${i}" alt="Unit photo ${i + 1}" loading="lazy" class="h-12 w-12 rounded-md border border-line/10 object-cover"></a>`).join("")}</div>` : ""}
                 </td>
                 <td class="whitespace-nowrap px-4 py-3 text-brand-amber">${v.source === "website" ? `<span class="inline-flex items-center gap-1"><i data-lucide="globe" class="h-3.5 w-3.5"></i> Website</span>` : v.visitNumber ? (v.visitNumber === 1 ? "1st" : "#" + v.visitNumber) : "—"}</td>
                 <td class="whitespace-nowrap px-4 py-3 text-muted">${v.time || "—"}</td>
                 <td class="whitespace-nowrap px-4 py-3">
                   <span class="rounded-full px-2 py-0.5 text-[11px] font-medium ${STATUS_STYLES[v.status] || "bg-line/10 text-muted"}">${v.status || "Booked"}</span>
                 </td>
-                <td class="whitespace-nowrap px-4 py-3">
+                ${isViewOnly() ? "" : `<td class="whitespace-nowrap px-4 py-3">
                   ${v.status === "Completed"
                     ? `<span class="inline-flex items-center gap-1 text-xs font-medium text-brand-amber"><i data-lucide="check" class="h-3.5 w-3.5"></i> Done</span>`
                     : `<button onclick="markWalkinDone('${v.id}')" class="rounded-lg border border-brand-amber/40 px-2 py-1 text-xs font-medium text-brand-amber transition-colors hover:bg-brand-amber/10">Mark as done</button>`}
-                </td>
+                </td>`}
               </tr>`).join("") : `
-              <tr><td colspan="10" class="px-4 py-6 text-center text-muted">${selectedDay ? "No units booked for this day." : "No bookings yet."}</td></tr>`}
+              <tr><td colspan="${isViewOnly() ? 9 : 10}" class="px-4 py-6 text-center text-muted">${selectedDay ? "No units booked for this day." : "No bookings yet."}</td></tr>`}
           </tbody>
         </table>
       </div>
-    </div>`);
+    </div>`;
 }
 
 // Booking List — flat, searchable list of every booking (walk-in + website).
