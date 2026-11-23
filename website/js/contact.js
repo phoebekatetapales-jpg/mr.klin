@@ -27,6 +27,6 @@
     if (sendVia === 'messenger') return window.open('https://m.me/mrklintradingandservicescorp?text=' + encodeURIComponent(text), '_blank', 'noopener');
     location.href = sendVia === 'sms'
       ? 'sms:09178805755?&body=' + encodeURIComponent(text)
-      : 'mailto:mrklintradingservicescorp@gmail.com?subject=' + encodeURIComponent('Website inquiry: ' + $('msgTopic').value) + '&body=' + encodeURIComponent(text);
+      : 'mailto:sales@mrklintradingservicescorp.com?subject=' + encodeURIComponent('Website inquiry: ' + $('msgTopic').value) + '&body=' + encodeURIComponent(text);
   });
 })();

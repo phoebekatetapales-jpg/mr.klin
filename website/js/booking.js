@@ -47,7 +47,8 @@
       notePlusQuote: function (n) { return '+ ' + n + ' service' + (n > 1 ? 's' : '') + ' quoted after inspection'; },
       rowVehicle: 'Vehicle', rowServices: 'Services', rowDate: 'Date', rowTime: 'Time', rowWhere: 'Where',
       rowEstimate: 'Estimate', rowDown: 'Downpayment (50%)',
-      whereHome: 'Home / office service', whereShop: 'At the shop — 74 M.L Quezon St., Bagumbayan, Taguig',
+      whereHome: 'Home / office service', whereShop: 'At the shop — ',
+      branchLabel: 'Which branch?', branchTaguig: 'Taguig — Bagumbayan', branchSucat: 'Sucat — Parañaque',
       quoteFor: ' + quote for ', afterQuote: 'After your quote',
       errVehicle: 'Please choose your vehicle type.', errService: 'Please choose at least one service.',
       errDate: 'Please choose a date.', errTime: 'Please choose a time.',
@@ -95,7 +96,8 @@
       notePlusQuote: function (n) { return '+ ' + n + ' serbisyong ipe-presyo pagkatapos ng inspeksyon'; },
       rowVehicle: 'Sasakyan', rowServices: 'Mga serbisyo', rowDate: 'Petsa', rowTime: 'Oras', rowWhere: 'Saan',
       rowEstimate: 'Tinatayang presyo', rowDown: 'Downpayment (50%)',
-      whereHome: 'Home / office service', whereShop: 'Sa shop — 74 M.L Quezon St., Bagumbayan, Taguig',
+      whereHome: 'Home / office service', whereShop: 'Sa shop — ',
+      branchLabel: 'Aling branch?', branchTaguig: 'Taguig — Bagumbayan', branchSucat: 'Sucat — Parañaque',
       quoteFor: ' + quote para sa ', afterQuote: 'Pagkatapos ng quote',
       errVehicle: 'Pakipili ang uri ng iyong sasakyan.', errService: 'Pumili ng kahit isang serbisyo.',
       errDate: 'Pakipili ng petsa.', errTime: 'Pakipili ng oras.',
@@ -247,7 +249,17 @@
     }
     renderPrices();
   });
-  $('bkMobile').addEventListener('change', function () { $('bkAddrWrap').hidden = !this.checked; });
+  // Branches the customer can bring the car to
+  var BRANCHES = {
+    taguig: { name: 'Taguig branch', address: '74 M.L Quezon St., Bagumbayan, Taguig' },
+    sucat: { name: 'Sucat branch', address: '8406-B Dr. A Santos Avenue, Brgy. BF Homes, Parañaque City' }
+  };
+  function branch() { var r = document.querySelector('input[name="bkBranch"]:checked'); return BRANCHES[r ? r.value : 'taguig']; }
+  function shopText(l) { var bb = branch(); return TEXT[l || lang].whereShop + bb.name + ', ' + bb.address; }
+  $('bkMobile').addEventListener('change', function () {
+    $('bkAddrWrap').hidden = !this.checked;
+    $('bkBranchWrap').hidden = this.checked; // home service: no shop to pick
+  });
 
   // ----- Step 2: calendar + time -----
   function sameDay(a, b) { return a && b && a.getTime() === b.getTime(); }
@@ -301,7 +313,7 @@
     return rows.concat([
       [t('rowDate'), dateText(state.date, lang)],
       [t('rowTime'), state.time],
-      [t('rowWhere'), $('bkMobile').checked ? t('whereHome') + ($('bkAddr').value.trim() ? ' — ' + $('bkAddr').value.trim() : '') : t('whereShop')],
+      [t('rowWhere'), $('bkMobile').checked ? t('whereHome') + ($('bkAddr').value.trim() ? ' — ' + $('bkAddr').value.trim() : '') : shopText()],
       [t('rowEstimate'), estimateText(e)],
       [t('rowDown'), e.priced ? (e.from || e.quote.length ? t('from') : '') + peso(downpayment(e)) : t('afterQuote')]
     ]);
@@ -337,7 +349,7 @@
       'Vehicle: ' + vehicle().label + ($('bkCar').value.trim() ? ' — ' + $('bkCar').value.trim() : '') + ($('bkPlate').value.trim() ? ' (' + $('bkPlate').value.trim() + ')' : ''),
       'Services: ' + chosen().map(function (s) { return s.name; }).join(', '),
       'Preferred schedule: ' + dateText(state.date) + ', ' + state.time,
-      'Location: ' + ($('bkMobile').checked ? 'Home/office service — ' + $('bkAddr').value.trim() : 'At the shop'),
+      'Location: ' + ($('bkMobile').checked ? 'Home/office service — ' + $('bkAddr').value.trim() : shopText('en')),
       'Website estimate: ' + estimateText(e, true),
       '50% downpayment: ' + (e.priced ? (e.from || e.quote.length ? 'from ' : '') + peso(downpayment(e)) : 'after quote')
     ];
@@ -476,7 +488,7 @@
         services: chosen().map(function (s) { return s.name; }),
         date: state.date.getFullYear() + '-' + String(state.date.getMonth() + 1).padStart(2, '0') + '-' + String(state.date.getDate()).padStart(2, '0'),
         slot: state.time,
-        location: mobile ? 'Home/office service — ' + $('bkAddr').value.trim() : 'At the shop',
+        location: mobile ? 'Home/office service — ' + $('bkAddr').value.trim() : shopText('en'),
         estimate: estimateText(e, true),
         notes: $('bkNotes').value.trim(),
         photos: photos,

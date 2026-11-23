@@ -105,7 +105,7 @@
       <div class="stat"><strong>100+</strong><span>Five-star customer reviews</span></div>
       <div class="stat"><strong>5 in 1</strong><span>Detailing, coating, mechanical, body &amp; accessories</span></div>
       <div class="stat"><strong>Mobile</strong><span>Detailing at your home or office</span></div>
-      <div class="stat"><strong>Taguig</strong><span>74 M.L Quezon St., Bagumbayan</span></div>
+      <div class="stat"><strong>2 branches</strong><span>Taguig &amp; Sucat, Parañaque</span></div>
     </div>
   </div>
 </section>
@@ -207,17 +207,22 @@
   <div class="container contact-row">
     <div class="contact-copy">
       <span class="kicker">Visit us</span>
-      <h2 class="title display">Come see us in Bagumbayan.</h2>
-      <p>Drop by the shop, or tell us where you are and we'll bring the service to you.</p>
+      <h2 class="title display">Come see us in Taguig or Parañaque.</h2>
+      <p>Drop by either branch, or tell us where you are and we'll bring the service to you.</p>
       <div class="cta-row">
         <button type="button" class="btn btn-primary" data-book>Book a service</button>
-        <a href="https://maps.google.com/?q=Mr.+Klin+Trading+and+Services+Corporation+Taguig" class="btn btn-ghost" target="_blank" rel="noopener">Get directions</a>
+        <a href="https://maps.google.com/?q=Mr.+Klin+Trading+and+Services+Corporation+Taguig" class="btn btn-ghost" target="_blank" rel="noopener">Taguig directions</a>
+        <a href="https://maps.google.com/?q=8406-B+Dr.+A+Santos+Avenue,+BF+Homes,+Para%C3%B1aque+City" class="btn btn-ghost" target="_blank" rel="noopener">Sucat directions</a>
       </div>
     </div>
     <div class="contact-cards">
       <div class="contact-card">
-        <span class="label">Address</span>
+        <span class="label">Taguig branch</span>
         <address>74 M.L Quezon St., Bagumbayan, Taguig City</address>
+      </div>
+      <div class="contact-card">
+        <span class="label">Sucat branch</span>
+        <address>8406-B Dr. A Santos Avenue, Brgy. BF Homes, Parañaque City</address>
       </div>
       <div class="contact-card">
         <span class="label">Mobile (Globe)</span>
@@ -230,11 +235,11 @@
       </div>
       <div class="contact-card">
         <span class="label">Sunday line</span>
-        <a class="num" href="tel:09338667408">0933-866-7408</a>
+        <a class="num" href="tel:09524674909">0952-467-4909</a>
       </div>
       <div class="contact-card">
         <span class="label">Email</span>
-        <a class="num" href="mailto:mrklintradingservicescorp@gmail.com">mrklintradingservicescorp@gmail.com</a>
+        <a class="num" href="mailto:sales@mrklintradingservicescorp.com">sales@mrklintradingservicescorp.com</a>
       </div>
     </div>
   </div>
@@ -280,11 +285,12 @@
     <div class="footer-col">
       <h4>Get in touch</h4>
       <ul>
-        <li><address>74 M.L Quezon St., Bagumbayan, Taguig City</address></li>
+        <li><address><b>Taguig:</b> 74 M.L Quezon St., Bagumbayan, Taguig City</address></li>
+        <li><address><b>Sucat:</b> 8406-B Dr. A Santos Avenue, Brgy. BF Homes, Parañaque City</address></li>
         <li><a href="tel:09178805755">0917-880-5755</a></li>
         <li><a href="tel:0288072457">02-8807-2457</a></li>
-        <li><a href="tel:09338667408">0933-866-7408 (Sundays)</a></li>
-        <li><a href="mailto:mrklintradingservicescorp@gmail.com" class="footer-email">mrklintradingservicescorp@gmail.com</a></li>
+        <li><a href="tel:09524674909">0952-467-4909 (Sundays)</a></li>
+        <li><a href="mailto:sales@mrklintradingservicescorp.com" class="footer-email">sales@mrklintradingservicescorp.com</a></li>
       </ul>
     </div>
   </div>
@@ -330,6 +336,13 @@
         <span class="bk-label" data-i18n="svcLabel">Services (choose one or more)</span>
         <div class="bk-services" id="bkServices"></div>
         <label class="bk-toggle"><input type="checkbox" id="bkMobile"> <span data-i18n-html="mobileToggle">Home / office service <small>— we come to you (fee confirmed by our team)</small></span></label>
+        <div class="bk-branch" id="bkBranchWrap">
+          <span class="bk-label" id="bkBranchLabel" data-i18n="branchLabel">Which branch?</span>
+          <div class="bk-chips" role="radiogroup" aria-labelledby="bkBranchLabel">
+            <label class="bk-chip"><input type="radio" name="bkBranch" value="taguig" checked><span data-i18n="branchTaguig">Taguig — Bagumbayan</span></label>
+            <label class="bk-chip"><input type="radio" name="bkBranch" value="sucat"><span data-i18n="branchSucat">Sucat — Parañaque</span></label>
+          </div>
+        </div>
       </div>
     </section>
 

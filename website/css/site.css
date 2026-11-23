@@ -1299,3 +1299,19 @@ footer.site .brand-logo { background: #000; }
   .btn-primary::after { display: none; }
   header.site.scrolled { box-shadow: none; }
 }
+
+/* ---------- Two branches ---------- */
+.bk-branch { margin-top: 16px; }
+.bk-branch .bk-label { margin-bottom: 8px; }
+.visit-branches { display: flex; flex-wrap: wrap; gap: 14px 28px; }
+.visit-branches > div { flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; }
+.visit-branches .label { font-family: var(--f-mono); font-size: 12px; letter-spacing: -0.3px; text-transform: uppercase; color: var(--muted); }
+.visit-branches .label::before { content: "{\00a0"; }
+.visit-branches .label::after { content: "\00a0}"; }
+.visit-branches .visit-addr { font-size: clamp(17px, 1.6vw, 20px); }
+/* The email address is long: give it a full-width row so it never breaks mid-word */
+.contact-cards .contact-card:has(a[href^="mailto:"]) { flex-basis: 100%; }
+.contact-card a.num[href^="mailto:"] { overflow-wrap: normal; }
+@media (max-width: 640px) {
+  .contact-cards .contact-card:has(address) { flex-basis: 100%; }
+}

@@ -2336,7 +2336,7 @@ function openBookingInvoice(id) {
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="font-display text-lg font-bold">MR. KLIN</p>
-          <p class="text-xs text-muted">Trading &amp; Services Corp. · 74 M.L Quezon St., Bagumbayan, Taguig · 0917-880-5755</p>
+          <p class="text-xs text-muted">Trading &amp; Services Corp. · Taguig: 74 M.L Quezon St., Bagumbayan · Sucat: 8406-B Dr. A Santos Ave., BF Homes, Parañaque · 0917-880-5755</p>
         </div>
         <div class="text-right">
           <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">Invoice</p>
