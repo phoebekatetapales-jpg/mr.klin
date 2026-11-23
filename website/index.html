@@ -778,6 +778,32 @@
   .offer { padding: 26px 8px; }
   .offer b { font-size: 13px; font-weight: 400; color: var(--muted); }
   .offer h3 { font-size: clamp(22px, 2.4vw, 30px); }
+  /* ---------- Homepage polish ---------- */
+  /* Services grid: icons in orange circles, "Learn more" with a round arrow */
+  #services .service-icon {
+    width: 48px; height: 48px; border-radius: 999px; background: rgba(255,90,31,.14); border: 1px solid rgba(255,90,31,.35);
+    color: var(--kicker); justify-content: center;
+  }
+  #services .service-icon svg { width: 22px; height: 22px; }
+  .service-more { display: inline-flex; align-items: center; gap: 10px; margin-top: auto; text-decoration: none; }
+  .service-more span {
+    width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px;
+    border: 1px solid var(--outline); transition: background-color .2s, color .2s, border-color .2s, transform .2s;
+  }
+  .service:hover .service-more span { background: var(--accent); border-color: var(--accent); color: var(--on-accent); transform: translateX(3px); }
+  .service-more:hover { text-decoration: none; }
+  /* Packages: prices stay on one line */
+  #packages .price strong { font-size: clamp(26px, 2.3vw, 34px); white-space: nowrap; }
+  #packages .package { gap: 16px; }
+  /* Ceramic illustration in a rounded bezel with a soft inner glow */
+  #ceramic .ceramic-art {
+    padding: 8px; border-radius: 28px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18);
+  }
+  #ceramic .ceramic-art svg {
+    border-radius: 20px; padding: clamp(28px, 4vw, 56px) clamp(16px, 2.5vw, 32px) clamp(16px, 2vw, 24px);
+    background: radial-gradient(70% 70% at 50% 35%, rgba(255,255,255,.12) 0%, rgba(11,13,16,.55) 75%);
+  }
+
   /* ---------- About page ---------- */
   /* Promises: one hairline grid, icons in orange circles */
   .values {
