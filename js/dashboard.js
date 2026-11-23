@@ -2068,10 +2068,10 @@ function renderFinancialSnapshot() {
   return `
     <div>
       <div class="mb-3 flex items-center justify-between gap-3">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-muted">Financials</p>
+        <p class="dash-eyebrow text-[11px] font-semibold uppercase tracking-wider text-muted">Financials</p>
         ${openBtn}
       </div>
-      <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div class="fin-kpis grid grid-cols-2 gap-4 lg:grid-cols-4">
         ${buildFinancialKpis().map((k) => statCard(k.label, k.value, k.sub, k.icon)).join("")}
       </div>
     </div>
