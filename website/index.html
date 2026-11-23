@@ -778,24 +778,63 @@
   .offer { padding: 26px 8px; }
   .offer b { font-size: 13px; font-weight: 400; color: var(--muted); }
   .offer h3 { font-size: clamp(22px, 2.4vw, 30px); }
-  .svc-photo { border-radius: 24px; border: 1px solid var(--line); box-shadow: none; }
+  /* Service photos sit in a rounded bezel, like the homepage photo */
+  .svc-photo {
+    border-radius: 28px; padding: 8px; background: rgba(127,127,127,.12); border: 1px solid var(--line); box-shadow: none;
+  }
+  .svc-photo img { border-radius: 20px; }
   .svc-photo::after { display: none; }
-  .svc-panel { border-radius: 24px; background: var(--graphite); border: 1px solid rgba(255,255,255,.1); color: #FF7A45; }
-  .svc-panel::before { background: var(--crimson); opacity: .22; border-radius: 50%; }
-  .svc-panel p { color: rgba(255,255,255,.82); }
-  .svc-items li::before { background: var(--mark); border-radius: 50%; }
+  /* Body repair panel glows orange like the site's highlight frames */
+  .svc-panel {
+    border-radius: 28px; border: 0; background: var(--soot); color: #FFF; isolation: isolate; overflow: hidden;
+  }
+  .svc-panel::before {
+    inset: -10%; width: auto; height: auto; border-radius: 0; filter: none; opacity: 1; z-index: -1; background: var(--furnace);
+  }
+  .svc-panel svg { color: #FFD3BF; }
+  .svc-panel p { color: rgba(255,255,255,.9); font-size: 15px; }
+  [data-theme="light"] .svc-panel p { color: rgba(255,255,255,.9); }
+  /* Service lists: numbered hairline rows in a rounded box */
+  .svc-items { counter-reset: svc-item; border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+  .svc-items li { counter-increment: svc-item; padding: 16px 20px 16px 64px; border-bottom: 1px solid var(--line); transition: background-color .2s; }
+  .svc-items li:last-child { border-bottom: 0; }
+  .svc-items li:hover { background: var(--field); }
+  .svc-items li::before {
+    content: counter(svc-item, decimal-leading-zero); left: 22px; top: 18px; width: auto; height: auto; border-radius: 0;
+    background: none; font-family: var(--f-mono); font-size: 13px; color: var(--kicker);
+  }
   .svc-items b { font-size: 17px; font-weight: 600; }
   .svc-items span { font-size: 14px; line-height: 1.7; }
   .svc-prices span { border-radius: 999px; background: var(--field); font-size: 13px; padding: 8px 14px; }
-  .price-table-wrap { border-radius: 24px; background: var(--card); }
+  .svc-prices b { font-family: var(--f-sans) !important; font-size: 14px; font-weight: 700; }
+  /* Price guide: hairline table with prices in the heading font */
+  .price-table-wrap { border-radius: 24px; background: transparent; border: 1px solid var(--line); }
   .price-table { font-size: 15px; }
-  .price-table thead th { background: var(--panel); }
-  .price-table tbody th { font-weight: 600; }
+  .price-table th, .price-table td { padding: 18px 24px; }
+  .price-table thead th { background: var(--field); }
+  .price-table tbody th { font-size: 16px; font-weight: 600; }
   .price-table td { font-size: 14px; line-height: 1.6; }
-  .faq { gap: 10px; }
-  .faq summary { font-size: 18px; font-weight: 500; padding: 20px 24px; }
-  .faq summary::after { color: var(--text); }
-  .faq details p { font-size: 15px; padding: 0 24px 22px; }
+  .price-table td:last-child { font-family: var(--f-sans) !important; font-size: 16px; font-weight: 700; color: var(--text); }
+  .price-table tbody tr { transition: background-color .2s; }
+  .price-table tbody tr:hover { background: var(--field); }
+  /* FAQ: one rounded list with hairline dividers */
+  .faq { gap: 0; border: 1px solid var(--line); border-radius: 24px; overflow: hidden; background: var(--card); }
+  .faq details { border: 0; border-radius: 0; background: transparent; }
+  .faq details + details { border-top: 1px solid var(--line); }
+  .faq summary { font-size: 18px; font-weight: 500; padding: 22px 24px; border-radius: 0 !important; }
+  .faq summary:hover { background: var(--field); }
+  .faq summary::after {
+    content: "+"; flex: none; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border-radius: 999px; border: 1px solid var(--outline); font-size: 18px; color: var(--text); transition: transform .25s, background-color .2s;
+  }
+  .faq details[open] summary::after { content: "+"; transform: rotate(45deg); background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .faq details p { font-size: 15px; padding: 0 24px 24px; max-width: 64ch; }
+  @media (max-width: 640px) {
+    .svc-items li { padding: 14px 16px 14px 52px; }
+    .svc-items li::before { left: 16px; top: 16px; }
+    .faq summary { font-size: 16px; padding: 18px; }
+    .faq details p { padding: 0 18px 20px; }
+  }
   .svc-cta { border-radius: 32px; padding: clamp(32px, 5vw, 64px); }
   .svc-cta .btn-ghost { border-color: rgba(255,255,255,.3); }
   .reach-card { padding: 24px; }
