@@ -2119,7 +2119,7 @@ function setTransactionFilter(status) {
 
 function renderTransactionFilterRow() {
   const filters = ["All", "Paid", "Pending", "Refunded"];
-  return `<div class="mb-3 flex flex-wrap gap-2">` + filters.map((f) => `
+  return `<div class="txn-filters mb-3 flex flex-wrap gap-2">` + filters.map((f) => `
     <button onclick="setTransactionFilter('${f}')"
       class="rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
         state.transactionFilter === f ? "bg-ink text-canvas" : "bg-line/5 text-muted hover:text-ink"
@@ -2490,7 +2490,8 @@ function renderSalesSection() {
   const pendingTotal = pending.reduce((s, t) => s + t.amount, 0);
 
   root.innerHTML = `
-    <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <span id="sales-marker" hidden></span>
+    <div class="fin-kpis grid grid-cols-2 gap-4 lg:grid-cols-4">
       ${statCard("Gross Sales", peso(gross), `${paid.length} paid sale(s)`, "shopping-cart")}
       ${statCard("Refunds", peso(refunds), "Returned to customers", "undo-2")}
       ${statCard("Net Sales", peso(gross - refunds), "Gross less refunds", "trending-up")}

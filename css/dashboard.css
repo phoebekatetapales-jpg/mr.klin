@@ -371,30 +371,34 @@ table:has(#bookings-units-body) thead th:nth-child(10), #bookings-units-body td:
 }
 .settings-note svg { color: #FF5A1F; }
 
-/* ---------- Overview page (the only section with #kpi-header) ---------- */
-#section-root:has(#kpi-header) p.font-heading { font-size: 18px; font-weight: 500; }
-#section-root:has(#kpi-header) .flex.flex-col.overflow-hidden > div:first-child > p.font-heading::before {
-  content: "{\00a0OVERVIEW\00a0}_"; display: block; margin-bottom: 6px; font-family: 'Geist Mono', ui-monospace, monospace;
+/* ---------- Overview and Sales pages (#kpi-header / #sales-marker) ---------- */
+#section-root:has(#sales-marker) { --eyebrow: "SALES"; }
+.txn-filters { gap: 8px; }
+.txn-filters button { border-radius: 999px; padding: 7px 16px; font-weight: 600; border: 1px solid rgb(var(--color-line) / 0.1); }
+.txn-filters button.bg-ink { background: #FF5A1F; color: #0B0D10; border-color: #FF5A1F; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) p.font-heading { font-size: 18px; font-weight: 500; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) .flex.flex-col.overflow-hidden > div:first-child > p.font-heading::before {
+  content: "{\00a0" var(--eyebrow, "OVERVIEW") "\00a0}_"; display: block; margin-bottom: 6px; font-family: 'Geist Mono', ui-monospace, monospace;
   font-size: 11px; font-weight: 400; letter-spacing: -0.2px; color: #FF5A1F;
 }
-:root[data-theme="light"] #section-root:has(#kpi-header) .flex.flex-col.overflow-hidden > div:first-child > p.font-heading::before { color: #B93A0B; }
+:root[data-theme="light"] :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) .flex.flex-col.overflow-hidden > div:first-child > p.font-heading::before { color: #B93A0B; }
 /* Lists become one rounded box with hairline rows */
-#section-root:has(#kpi-header) ul.space-y-2 {
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 {
   border: 1px solid rgb(var(--color-line) / 0.1); border-radius: 20px; overflow: hidden;
 }
-#section-root:has(#kpi-header) ul.space-y-2 > li {
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li {
   margin: 0 !important; border: 0 !important; border-radius: 0 !important; padding: 14px 16px; transition: background-color .2s;
 }
-#section-root:has(#kpi-header) ul.space-y-2 > li + li { border-top: 1px solid rgb(var(--color-line) / 0.1) !important; }
-#section-root:has(#kpi-header) ul.space-y-2 > li:hover { background: rgb(255 90 31 / 0.04); }
-#section-root:has(#kpi-header) ul.space-y-2 > li > svg, #section-root:has(#kpi-header) ul.space-y-2 > li > i {
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li + li { border-top: 1px solid rgb(var(--color-line) / 0.1) !important; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li:hover { background: rgb(255 90 31 / 0.04); }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li > svg, :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li > i {
   box-sizing: content-box; padding: 7px; border-radius: 999px; background: rgb(255 90 31 / 0.14); color: #FF5A1F;
 }
 /* Row buttons: "Open" is an outline pill, "Mark paid" an orange pill */
-#section-root:has(#kpi-header) ul.space-y-2 button { border-radius: 999px; padding: 7px 14px; font-weight: 600; }
-#section-root:has(#kpi-header) ul.space-y-2 button[onclick^="markInvoicePaid"] { border: 0; background: #FF5A1F; color: #0B0D10; }
-#section-root:has(#kpi-header) ul.space-y-2 button[onclick^="markInvoicePaid"]:hover { background: #FF7A45; }
-#section-root:has(#kpi-header) .flex.flex-col.overflow-hidden > div:first-child button { border-radius: 999px; padding: 7px 14px; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 button { border-radius: 999px; padding: 7px 14px; font-weight: 600; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 button[onclick^="markInvoicePaid"] { border: 0; background: #FF5A1F; color: #0B0D10; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 button[onclick^="markInvoicePaid"]:hover { background: #FF7A45; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) .flex.flex-col.overflow-hidden > div:first-child button { border-radius: 999px; padding: 7px 14px; }
 /* Financial tiles: one hairline grid, total revenue glows orange */
 .fin-kpis {
   gap: 0 !important; background: rgb(var(--color-panel)); border: 1px solid rgb(var(--color-line) / 0.1); border-radius: 24px; overflow: hidden;
@@ -411,13 +415,13 @@ table:has(#bookings-units-body) thead th:nth-child(10), #bookings-units-body td:
 .fin-kpis > div:first-child span.rounded-lg { background: rgb(255 255 255 / 0.16); }
 @media (max-width: 640px) {
   /* Let row text use the full width; badge and button drop to a second line */
-  #section-root:has(#kpi-header) ul.space-y-2 > li:has(button) { flex-wrap: wrap; row-gap: 10px; }
-  #section-root:has(#kpi-header) ul.space-y-2 > li:has(button) > span:first-child { flex-basis: 100%; white-space: normal; }
-  #section-root:has(#kpi-header) ul.space-y-2 > li:has(button) > span:first-child + span { margin-right: auto; }
-  #section-root:has(#kpi-header) ul.space-y-2 > li:has(button[onclick^="markInvoicePaid"]) > div { flex-basis: 100%; }
-  #section-root:has(#kpi-header) ul.space-y-2 > li p.truncate { white-space: normal; }
+  :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li:has(button) { flex-wrap: wrap; row-gap: 10px; }
+  :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li:has(button) > span:first-child { flex-basis: 100%; white-space: normal; }
+  :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li:has(button) > span:first-child + span { margin-right: auto; }
+  :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li:has(button[onclick^="markInvoicePaid"]) > div { flex-basis: 100%; }
+  :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) ul.space-y-2 > li p.truncate { white-space: normal; }
 }
-#section-root:has(#kpi-header) .fin-kpis + * , #section-root:has(#kpi-header) div:has(> .fin-kpis) button { border-radius: 999px; }
+:is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) .fin-kpis + * , :is(#section-root:has(#kpi-header), #section-root:has(#sales-marker)) div:has(> .fin-kpis) button { border-radius: 999px; }
 
 /* Inputs and focus rings */
 input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-family: inherit; }
