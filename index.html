@@ -378,6 +378,34 @@
     .channel-grid > div p:last-child { font-size: 24px; }
   }
 
+  /* ---------- Settings page ---------- */
+  .settings-grid > div > div:first-child > p.font-heading,
+  .settings-grid > div > div > div:first-child > p.font-heading { font-size: 18px; font-weight: 500; }
+  .settings-grid > div > div:first-child > p.font-heading::before,
+  .settings-grid > div > div > div:first-child > p.font-heading::before {
+    content: "{\00a0SETTINGS\00a0}_"; display: block; margin-bottom: 6px; font-family: 'Geist Mono', ui-monospace, monospace;
+    font-size: 11px; font-weight: 400; letter-spacing: -0.2px; color: #FF5A1F;
+  }
+  :root[data-theme="light"] .settings-grid p.font-heading::before { color: #B93A0B; }
+  .settings-grid input:not([type="checkbox"]):not([type="radio"]) {
+    border-radius: 999px; min-height: 46px; padding: 10px 18px; font-size: 15px; background: rgb(var(--color-line) / 0.04);
+  }
+  .settings-grid label { font-size: 13px; margin-bottom: 6px; }
+  .settings-grid form button[type="submit"] { border-radius: 999px; padding: 12px 24px; font-size: 15px; font-weight: 700; }
+  .settings-grid .inline-flex.rounded-xl { border-radius: 999px; padding: 4px; border: 1px solid rgb(var(--color-line) / 0.1); }
+  .settings-grid .inline-flex.rounded-xl > button { border-radius: 999px; padding: 8px 14px; font-weight: 600; }
+  .settings-grid button[onclick^="reset"], .settings-grid button[onclick^="clearNotification"] {
+    border-radius: 999px; padding: 8px 16px; font-weight: 600; color: rgb(var(--color-ink));
+  }
+  .settings-grid button[onclick^="reset"]:hover, .settings-grid button[onclick^="clearNotification"]:hover { border-color: #FF5A1F; color: #FF5A1F; background: rgb(255 90 31 / 0.08); }
+  .settings-grid .border-b.py-3 { padding-block: 16px; }
+  .settings-note {
+    display: flex; align-items: center; gap: 12px; border-radius: 24px !important; padding: 18px 22px !important;
+    border-color: rgb(255 90 31 / 0.3) !important; background: rgb(255 90 31 / 0.07) !important;
+    font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px !important; line-height: 1.6; color: rgb(var(--color-ink)) !important;
+  }
+  .settings-note svg { color: #FF5A1F; }
+
   /* Inputs and focus rings */
   input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-family: inherit; }
   :focus-visible { outline-color: #FF5A1F; }
@@ -3356,7 +3384,7 @@ function renderSettingsSection() {
   const outlineBtn = "rounded-lg border border-line/10 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-line/20 hover:bg-line/5 hover:text-ink";
 
   root.innerHTML = `
-    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+    <div class="settings-grid grid grid-cols-1 gap-5 lg:grid-cols-2">
       ${overviewCard("Business profile", `
         <form onsubmit="saveProfile(event)" class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           ${field("name", "Business name")}
@@ -3383,8 +3411,8 @@ function renderSettingsSection() {
           ${settingRow("Notifications", "Show all notifications as unread again.", `<button onclick="clearNotificationHistory()" class="${outlineBtn}">Clear history</button>`)}`)}
       </div>
     </div>
-    <p class="rounded-xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-sm shadow-black/5">
-      Settings, stock counts, inventory and walk-in bookings are saved in this browser only — they won't appear on other devices.
+    <p class="settings-note rounded-xl border border-line/10 bg-panel p-4 text-xs text-muted shadow-sm shadow-black/5">
+      <i data-lucide="info" class="h-4 w-4 shrink-0"></i><span>Settings, stock counts, inventory and walk-in bookings are saved in this browser only — they won't appear on other devices.</span>
     </p>`;
 }
 
